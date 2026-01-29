@@ -22,10 +22,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      # gradlew 실행권한 이슈 방지
       - name: Grant execute permission for gradlew
         working-directory: workflow-backend
         run: chmod +x gradlew
 
+      # 백엔드 빌드 (테스트는 일단 제외 추천)
       - name: Build with Gradle Wrapper
         working-directory: workflow-backend
         run: ./gradlew clean build -x test
