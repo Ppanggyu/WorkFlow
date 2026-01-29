@@ -15,3 +15,6 @@ workflow-frontend/**/dist/
 # OS
 Thumbs.db
 .DS_Store
+
+# SQL
+*.slq
