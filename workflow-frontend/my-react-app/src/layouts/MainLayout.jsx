@@ -1,12 +1,13 @@
 // src/layouts/MainLayout.jsx
 import { Outlet, NavLink } from 'react-router-dom'
 import './MainLayout.css'
+import logo from "../assets/images/Logo.png";
 
 export default function MainLayout() {
   return (
     <div className="appShell">
       <aside className="sidebar">
-        <div className="sidebarTitle">Sidebar</div>
+        <div className="sidebarTitle"><img className="logo" src={logo} alt="logo"/></div>
         <nav className="sidebarNav">
           <NavLink to="/" end className={({ isActive }) => `navItem ${isActive ? 'active' : ''}`}>
             Dashboard
@@ -34,7 +35,7 @@ export default function MainLayout() {
 
       <div className="mainCol">
         <header className="header">
-          <div className="headerTitle">Header</div>
+          <div className="headerTitle">Dashboard</div>
           <div className="headerActions">
             <button className="ghostBtn">Search</button>
             <button className="ghostBtn">Notifications</button>

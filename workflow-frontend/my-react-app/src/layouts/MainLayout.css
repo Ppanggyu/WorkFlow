@@ -1,13 +1,18 @@
-/* src/layouts/MainLayout.css */
+/* 대쉬보드 전체 사이즈 조절 */
 .appShell {
   min-height: 100vh;
+  min-width: 100vw;
   display: flex;
   background: #f6f7fb;
 }
 
+/* 사이드바 조절 */
 .sidebar {
-  width: 240px;
-  padding: 18px 14px;
+  /* width: 240px; */
+  width: 15vw;
+  min-width: 150px;
+  min-height: 100vh;
+  /* padding: 18px 14px; */
   background: #fff;
   border-right: 1px solid #e6e8ef;
 }
@@ -24,6 +29,7 @@
 }
 
 .navItem {
+  margin-left: 10px;
   padding: 10px 10px;
   border-radius: 10px;
   text-decoration: none;
@@ -31,10 +37,12 @@
 }
 
 .navItem:hover {
+  margin-right: 10px;
   background: #f3f4f6;
 }
 
 .navItem.active {
+  margin-right: 10px;
   background: #eef2ff;
   color: #3730a3;
 }
@@ -45,8 +53,9 @@
   flex-direction: column;
 }
 
+/* 해더 */
 .header {
-  height: 72px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -57,9 +66,18 @@
 
 .headerTitle {
   font-weight: 700;
+  font-size: 40px;
+}
+
+@media (max-width:700px) {
+  .headerTitle {
+    display: none;
+  }
+  
 }
 
 .headerActions {
+  margin-left: auto;
   display: flex;
   gap: 8px;
 }
@@ -88,6 +106,7 @@
   gap: 12px;
 }
 
+/* 작은 카드 사이즈 조절 */
 .card {
   background: #fff;
   border: 1px solid #e6e8ef;
@@ -96,22 +115,42 @@
   min-height: 74px;
 }
 
+/* 아래 큰카드 사이즈 조절 */
 .bigCard {
-  min-height: 420px;
+  overflow: auto;
+  max-height: 100%;
+}
+
+.bigCard2 {
+  overflow: auto;
+  max-height: 100%;
 }
 
 .twoCol {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 16px;
+  align-items: start;
 }
 
 .cardTitle {
-  font-weight: 700;
+  /* font-weight: 700; */
+  font-size: 20px;
   margin-bottom: 10px;
+  /* 상자 줄어들면 글씨...으로 바꾸기 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .muted {
   color: #6b7280;
   font-size: 14px;
+}
+
+.logo{
+  margin-top: 10px;
+  margin-left: 10px;
+  width: 14vw;
+  min-width: 127px;
 }

@@ -1,3 +1,4 @@
+
 -- 현재 사용중인 계정 조회
 SELECT current_user;
 -- 현재 DB조회
@@ -11,8 +12,15 @@ CREATE TABLE test (
 
 SELECT * FROM test;
 
+SELECT * FROM users;
 
 DROP TABLE test;
+
+
+-- 계정 3개
+INSERT INTO users VALUES (1, 'admin', 1234, '김워크', 'CEO', '관리자', 'ADMIN', 'DISABLED', now(), now());
+INSERT INTO users VALUES (2, 'song', 1234, '송현오', '개발부', '부장', 'USER', 'DISABLED', now(), now());
+INSERT INTO users VALUES (3, 'lim', 1234, '임현규', '개발부', '주임', 'USER', 'DISABLED', now(), now());
 
 
 CREATE TABLE users (

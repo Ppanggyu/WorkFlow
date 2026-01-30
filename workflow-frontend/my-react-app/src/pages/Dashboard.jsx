@@ -32,12 +32,38 @@ export default function Dashboard() {
       <section className="twoCol">
         <div className="card bigCard">
           <div className="cardTitle">My Tasks Table</div>
-          <div className="muted">(필터: 상태/담당자/기간/키워드)</div>
+          <div className="muted">(필터: 상태/담당자/기간/키워드)
+          </div>
         </div>
 
-        <div className="card bigCard">
+        <div className="card bigCard2">
           <div className="cardTitle">Activity Log</div>
-          <div className="muted">(상태/담당자/마감일 변경 이력)</div>
+          <div className="muted">(상태/담당자/마감일 변경 이력)
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+            <p>asdasdasdas</p>
+          </div>
         </div>
       </section>
     </div>
