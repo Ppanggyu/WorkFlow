@@ -40,6 +40,7 @@ export default function MainLayout() {
             <button className="ghostBtn">Search</button>
             <button className="ghostBtn">Notifications</button>
             <button className="ghostBtn">Profile</button>
+            <NavLink to="/login"><button className="ghostBtn">Login</button></NavLink>
           </div>
         </header>
 
