@@ -15,9 +15,9 @@ import java.io.IOException;
 // OncePerRequestFilter: 요청 1번당 필터도 1번만 실행되게 보장하는 편한 필터 베이스 클래스
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-	// jwtProvider: 토큰 검증(validate), 토큰에서 username 추출(getUsername) 등을 하는 애
+	// jwtProvider: 토큰 검증(validate), 토큰에서 username 추출(getEmail) 등을 하는 애
     private final JwtProvider jwtProvider;
-    // userDetailsService: username으로 UserDetails(권한 포함) 를 로딩하는 애
+    // userDetailsService: email으로 UserDetails(권한 포함) 를 로딩하는 애
     // ex) 너는 InMemoryUserDetailsManager로 “user/1234/ROLE_USER” 들어있지
     private final UserDetailsService userDetailsService;
 
@@ -54,18 +54,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // validate()가 보통 하는 일
             // 서명(Signature) 검증: 위조/변조 여부 확인, 만료(exp) 확인: 시간이 지났는지, 토큰 형식이 정상인지
             if (jwtProvider.validate(token)) {
-            	// 토큰에서 username 꺼내기
-            	// JWT payload의 sub(subject) 같은 곳에 username을 넣어두는 경우가 흔함. getUsername()는 거기서 값을 꺼내는 메서드.
-                String username = jwtProvider.getUsername(token);
-                // username으로 사용자 정보 로딩
+            	// 토큰에서 email 꺼내기
+            	// JWT payload의 sub(subject) 같은 곳에 email을 넣어두는 경우가 흔함. getUsername()는 거기서 값을 꺼내는 메서드.
+                String email = jwtProvider.getEmail(token);
+                // email으로 사용자 정보 로딩
                 // 여기서 DB든 메모리든 사용자 정보를 가져옴.
                 // 중요 포인트: 권한(authorities)을 얻으려고 이걸 함(ROLE_USER, ROLE_ADMIN 같은 권한 정보)
                 // 즉, 토큰에 role을 넣지 않았더라도 서버가 UserDetailsService로 다시 가져와서 권한을 채울 수 있음.
-                UserDetails user = userDetailsService.loadUserByUsername(username);
+                UserDetails user = userDetailsService.loadUserByUsername(email);
 
                 // 인증된 사요자 객체 만들기
                 // sernamePasswordAuthenticationToken의 두 가지 용도
-                // 1. 로그인 시도할 때: username/password 넣어서 authenticate()로 보냄
+                // 1. 로그인 시도할 때: email/password 넣어서 authenticate()로 보냄
                 // 2. 로그인 완료 상태 만들 때: principal(UserDetails) + authorities 넣어서 “이미 인증됨”으로 만듦
                 // user : principal(누구냐) → UserDetails
                 // null : credentials(비밀번호) → 이미 인증 끝났으니 굳이 안 넣음

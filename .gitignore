@@ -21,3 +21,6 @@ workflow_spl.sql
 
 # Security Test
 spring_security
+
+# application.properties
+application.properties

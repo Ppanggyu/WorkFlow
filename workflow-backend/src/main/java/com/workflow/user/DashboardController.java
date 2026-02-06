@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class DashboardController {
 
   // 확인용
-	@GetMapping("/health")
+  @GetMapping("/health")
   public Map<String, String> health() {
     return Map.of("status", "ok");
   }

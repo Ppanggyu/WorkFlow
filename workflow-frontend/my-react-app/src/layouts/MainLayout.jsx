@@ -1,9 +1,21 @@
 // src/layouts/MainLayout.jsx
-import { Outlet, NavLink } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate} from 'react-router-dom'
 import './MainLayout.css'
 import logo from "../assets/images/Logo.png";
 
+
 export default function MainLayout() {
+
+const navigate = useNavigate();
+
+const onLogout = async () => {
+    await fetch("http://localhost:8081/api/logout", {
+    method: "POST",
+    credentials: "include"
+    });
+    navigate("/login");
+  };
+
   return (
     <div className="appShell">
       <aside className="sidebar">
@@ -41,6 +53,7 @@ export default function MainLayout() {
             <button className="ghostBtn">Notifications</button>
             <button className="ghostBtn">Profile</button>
             <NavLink to="/login"><button className="ghostBtn">Login</button></NavLink>
+            <button onClick={onLogout} className="ghostBtn">logout</button>
           </div>
         </header>
 
@@ -50,4 +63,5 @@ export default function MainLayout() {
       </div>
     </div>
   )
+
 }

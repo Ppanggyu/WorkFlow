@@ -55,7 +55,10 @@ public class SecurityConfig {
 		            	// /api/health만 임시로 열어서 200뜨게 하기(연결 확인용) 추가
 		            	// .requestMatchers("/api/health").permitAll() 
             	.requestMatchers(HttpMethod.POST, "/api/login").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
+            	.requestMatchers(HttpMethod.POST, "/api/logout").permitAll()
+            	 .requestMatchers(HttpMethod.POST, "/api/refresh").permitAll()
+                // .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // 로그인 후에만 api접근 가능
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
@@ -71,7 +74,8 @@ public class SecurityConfig {
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		config.setAllowedHeaders(List.of("*"));
 		config.setExposedHeaders(List.of("Authorization"));
-		config.setAllowCredentials(false); // JWT를 헤더로만 쓸 거면 false 권장
+		// credentials = 쿠키 / 인증 정보
+		config.setAllowCredentials(true); // JWT를 헤더로만 쓸 거면 false 권장
 
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", config);

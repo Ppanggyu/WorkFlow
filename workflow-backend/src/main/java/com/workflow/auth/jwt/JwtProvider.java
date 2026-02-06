@@ -1,23 +1,25 @@
 package com.workflow.auth.jwt;
 
-// jjwt 라이브러리(0.12.x)의 핵심 클래스들
-// Jwts.builder() : 토큰 만들기
-// Jwts.parser() : 토큰 파싱/검증하기
-// Keys.hmacShaKeyFor() : HMAC 서명용 키 만들기
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+
+// SecretKey : 서명/검증에 사용할 키 타입
+// StandardCharsets.UTF_8 : 문자열을 바이트로 변환할 때 인코딩 고정
+// Date : issuedAt / expiration 설정용
+import javax.crypto.SecretKey;
 
 // @Component로 빈 등록
 // @Value로 application.properties/yml 값 주입
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-// SecretKey : 서명/검증에 사용할 키 타입
-// StandardCharsets.UTF_8 : 문자열을 바이트로 변환할 때 인코딩 고정
-// Date : issuedAt / expiration 설정용
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
+import io.jsonwebtoken.Claims;
+// jjwt 라이브러리(0.12.x)의 핵심 클래스들
+// Jwts.builder() : 토큰 만들기
+// Jwts.parser() : 토큰 파싱/검증하기
+// Keys.hmacShaKeyFor() : HMAC 서명용 키 만들기
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 
 // JWT를 “발급(createToken)”, “검증(validate)”, “토큰에서 username 뽑기(getUsername)” 하는 유틸 클래스
 // 이 클래스를 스프링이 자동으로 Bean으로 등록
@@ -28,7 +30,8 @@ public class JwtProvider {
 	// key: JWT 서명(Sign)과 검증(Verify)에 쓰는 비밀키
 	// expMillis : 토큰 만료 시간(밀리초 단위)
     private final SecretKey key;
-    private final long expMillis;
+    private final long accessExpMillis;
+    private final long refreshExpMillis;
 
     // 생성자: 설정값 주입 + 가공
     // @Value("${jwt.secret}"): application.properties에 있는 jwt.secret 값을 문자열로 주입
@@ -44,22 +47,26 @@ public class JwtProvider {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         // 만료시간을 “분 → 밀리초”로 변환
         // expMin이 “분” 단위니까 분 × 60초 × 1000ms = 밀리초로 변환
-        // ex) 30분이면 30 * 60_000 = 1,800,000ms
-        this.expMillis = expMin * 60_000;
+        // ex) 10분이면 10 * 60_000 = 600,000ms
+        this.accessExpMillis = expMin * 60_000;
+        this.refreshExpMillis = expMin * 40_320_000;
     }
 
-    // 토큰 생성
+    // Access 토큰 생성
     // now: 현재 시간
     // exp: 현재 시간 + 만료시간 = 토큰 만료 시각
-    public String createToken(String username) {
+    public String createAccessToken(String email, String role) {
         Date now = new Date();
-        Date exp = new Date(now.getTime() + expMillis);
+        Date exp = new Date(now.getTime() + accessExpMillis);
 
         // Jwts.builder() : JWT 만들기 시작
         return Jwts.builder()
-        		// .subject(username) : payload의 sub(subject) 클레임에 username 저장
-        		// 이걸 나중에 getUsername()으로 다시 꺼냄
-                .subject(username)
+        		// .subject(email) : payload의 sub(subject) 클레임에 email 저장
+        		// 이걸 나중에 getEmail()으로 다시 꺼냄
+                .subject(email)
+                // 추가 정보 넣기(우린 권한)
+                .claim("role", role)
+                .claim("typ", "access")
                 // issuedAt(now) : iat(issued at): 언제 발급됐는지 기록
                 .issuedAt(now)
                 // .expiration(exp) : exp: 언제 만료되는지 기록
@@ -67,6 +74,20 @@ public class JwtProvider {
                 // .signWith(key) : 위 payload를 key로 서명해서 위조/변조 방지
                 .signWith(key)   // ← 0.12.x 방식
                 // .compact() : 최종적으로 xxxxx.yyyyy.zzzzz 형태 문자열(JWT) 생성
+                .compact();
+    }
+    
+    // Refresh 토큰 생성
+    public String createRefreshToken(String email) {
+        Date now = new Date();
+        Date exp = new Date(now.getTime() + refreshExpMillis);
+
+        return Jwts.builder()
+                .subject(email)
+                .claim("typ", "refresh")
+                .issuedAt(now)
+                .expiration(exp)
+                .signWith(key)
                 .compact();
     }
 
@@ -90,15 +111,28 @@ public class JwtProvider {
             return false;
         }
     }
+    
+    // 리프래쉬 토큰인지 확인하는 매서드
+    public Claims getClaims(String token) {
+		return Jwts.parser()
+				.verifyWith(key)
+				.build()
+				.parseSignedClaims(token)
+				.getPayload();
+    }
+    
+    public boolean isRefreshToken(String token) {
+    	return "refresh".equals(getClaims(token).get("typ", String.class));
+    }
 
-    // username 추출
+    // email 추출
     // 파서로 토큰을 검증하면서 파싱
     // payload(클레임들) 가져오기
     // payload의 sub 값을 반환
     // .getPayload() : 클레임 맵(내용) 부분
-    // .getSubject() : 그중 sub 값 (createToken에서 넣어둔 username)
-    // 즉, createToken()에서 .subject(username)로 넣고 getUsername()에서 .getSubject()로 꺼내는 구조
-    public String getUsername(String token) {
+    // .getSubject() : 그중 sub 값 (createToken에서 넣어둔 email)
+    // 즉, createToken()에서 .subject(email)로 넣고 getEmail()에서 .getSubject()로 꺼내는 구조
+    public String getEmail(String token) {
         return Jwts.parser()
                 .verifyWith(key)
                 .build()
