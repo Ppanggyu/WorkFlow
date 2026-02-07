@@ -7,10 +7,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import com.workflow.auth.service.AuthService;
-import com.workflow.auth.service.CustomUserDetailsService;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,6 +59,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             	// 토큰에서 email 꺼내기
             	// JWT payload의 sub(subject) 같은 곳에 email을 넣어두는 경우가 흔함. getUsername()는 거기서 값을 꺼내는 메서드.
                 String email = jwtProvider.getEmail(token);
+                
+                
+                System.out.println("UDS CLASS = " + userDetailsService.getClass());
+                System.out.println("JWT EMAIL = " + email);
+                
+                
                 // email으로 사용자 정보 로딩
                 // 여기서 DB든 메모리든 사용자 정보를 가져옴.
                 // 중요 포인트: 권한(authorities)을 얻으려고 이걸 함(ROLE_USER, ROLE_ADMIN 같은 권한 정보)

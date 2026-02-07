@@ -1,19 +1,24 @@
-import { Routes, Route } from 'react-router-dom'
-import MainLayout from './layouts/MainLayout'
-import Dashboard from './pages/dashboard/Dashboard';
-import Login from './pages/auth/Login'
-import { AuthProvider } from "./pages/auth/AuthProvider";
+import { Routes, Route } from "react-router-dom";
+import MainLayout from "./layouts/MainLayout";
+import Dashboard from "./pages/Dashboard/Dashboard";
+import Login from "./pages/auth/Login";
+import AuthProvider from "./pages/auth/AuthProvider";
+import ProtectedRoute from "./pages/auth/ProtectedRoute";
 
 export default function App() {
-
   return (
     <AuthProvider>
-    <Routes>
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<Dashboard />} />
-      </Route>
-      <Route path="/login" element={<Login />}></Route>
-    </Routes>
+      <Routes>
+        {/* 보호 라우트 */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Dashboard />} />
+          </Route>
+        </Route>
+
+        {/* 공개 라우트 */}
+        <Route path="/login" element={<Login />} />
+      </Routes>
     </AuthProvider>
-  )
+  );
 }

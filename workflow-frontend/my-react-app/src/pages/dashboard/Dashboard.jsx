@@ -1,22 +1,26 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../auth/useAuth";
-import { apiFetch } from "../api/apiFetch"; 
+import { api } from "../api/api.js";
 
 export default function Dashboard() {
 
   const kpis = ['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'ON_HOLD', 'CANCELED']
   const [counts, setCounts] = useState({})
-  const { accessToken, setAccessToken } = useAuth();
+  const { accessToken } = useAuth();
 
+// accessToken 값이 바뀔때 마다 안에 있는 코드를 실행하라. 
 useEffect(() => {
-    apiFetch("/api/kpi", accessToken, setAccessToken)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then(setCounts)
-      .catch((e) => console.error("KPI 불러오기 실패", e));
-  }, [accessToken, setAccessToken]);
+  console.log("Dashboard accessToken =", accessToken);
+  if (!accessToken) return; // 로그인 전엔 호출 X
+
+  // 겟 포스트 구분
+  api.get("/api/kpi")
+  // 요청 성공하면 200(ok) 실행
+    .then((res) => setCounts(res.data))
+    // 실패하면 에러 표시
+    // ex) 토큰 만료 401, 서버 오류 500, 네트워크 오류 등
+    .catch((e) => console.error("KPI 불러오기 실패", e));
+}, [accessToken]);
 
   return (
     <div className="dashboardGrid">

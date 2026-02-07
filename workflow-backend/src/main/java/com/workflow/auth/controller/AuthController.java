@@ -76,9 +76,21 @@ public class AuthController {
 	public ResponseEntity<?> refresh(HttpServletRequest req, HttpServletResponse res){
 		
 		String refreshToken = readCookie(req, "refreshToken");
-		String newAccessToken = authService.refresh(refreshToken);// 서비스에서 다시 발급 코드
 		
-		return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+		// 쿠키 자체가 없으면 -> 비로그인
+		if(refreshToken == null) {
+			return ResponseEntity.status(401).build();
+		}
+		
+		// 유효한 경우 액세스 토큰 발급
+		try {
+			String newAccessToken = authService.refresh(refreshToken);// 서비스에서 다시 발급 코드
+			return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+			
+		// 만료/위조/없는 토큰 -> 비로그인
+		}catch(Exception e) {
+			return ResponseEntity.status(401).build();
+		}
 		
 	}
 	
