@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AuthCtx } from "./AuthContext";
-import { setApiAccessToken } from "../api/api";
+import { refreshClient, setApiAccessToken } from "../api/api";
 
 export default function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);
@@ -10,23 +10,31 @@ export default function AuthProvider({ children }) {
     setApiAccessToken(accessToken);
   }, [accessToken]);
 
-  useEffect(() => {
-    const boot = async () => {
-      try {
-        const res = await fetch("http://localhost:8081/api/refresh", {
-          method: "POST",
-          credentials: "include",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setAccessToken(data.accessToken);
-        }
-      } finally {
-        setAuthReady(true);
-      }
-    };
-    boot();
-  }, []);
+useEffect(() => {
+  const boot = async () => {
+    try {
+
+      const res = await refreshClient.post("/api/refresh");
+
+      // 204면 비로그인(정상) → 아무 것도 안 함
+      if (res.status === 204) return;
+
+      // 성공 시 액세스 토큰 저장
+      setAccessToken(res.data.accessToken);
+
+    } catch (e) {
+
+      // 쿠키는 있는데 토큰이 죽었으면 401 (이것도 조용히 처리 가능)
+      if (e.response?.status === 401) return;
+
+      console.error("[BOOT REFRESH ERROR]", e);
+
+    } finally {
+      setAuthReady(true);
+    }
+  };
+  boot();
+}, []);
 
   if (!authReady) return null;
 

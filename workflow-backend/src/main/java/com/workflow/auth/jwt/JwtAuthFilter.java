@@ -7,6 +7,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,17 +20,13 @@ import lombok.RequiredArgsConstructor;
 // OncePerRequestFilter: 요청 1번당 필터도 1번만 실행되게 보장하는 편한 필터 베이스 클래스
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-	// jwtProvider: 토큰 검증(validate), 토큰에서 username 추출(getEmail) 등을 하는 애
+    // jwtProvider: JWT 파싱 + 서명/만료 검증 + claims 추출 담당
     private final JwtProvider jwtProvider;
-    // userDetailsService: email으로 UserDetails(권한 포함) 를 로딩하는 애
-    // ex) 너는 InMemoryUserDetailsManager로 “user/1234/ROLE_USER” 들어있지
-    private final UserDetailsService userDetailsService;
 
-//    // 생성자
-//    public JwtAuthFilter(JwtProvider jwtProvider, UserDetailsService userDetailsService) {
-//        this.jwtProvider = jwtProvider;
-//        this.userDetailsService = userDetailsService;
-//    }
+    // userDetailsService:
+    // userId를 기준으로 UserDetails(권한 포함)를 로딩하는 서비스
+    // 메서드 이름은 loadUserByUsername지만 실제로는 "식별자 문자열"을 받는 용도
+    private final UserDetailsService userDetailsService;
 
     // 모든 요청이 들어올 때마다 여기 실행됨
     // request: 들어온 HTTP 요청
@@ -40,63 +39,74 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-    	// 헤더에서 Authorization 값을 꺼냄.
+        // 이미 인증된 상태면 스킵
+        // (다른 필터에서 Authentication을 이미 세팅했을 수도 있음)
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 헤더에서 Authorization 값을 꺼냄
         String auth = request.getHeader("Authorization");
 
         // Bearer 토큰 형식인지 체크
-        // 헤더가 존재하고, "Bearer "로 시작하면 JWT가 있다고 판단.
-        // 이 조건을 통과 못하면 통이 없는 요청이거나 형식이 잘못된 요청이니까 인증 처리 안 하고 그냥 다음으로 넘김.
-        if (auth != null && auth.startsWith("Bearer ")) {
-        	
-        	// 실제 토큰 문자열만 뽑기
-        	// "Bearer "는 7글자 (B e a r e r + 공백), 앞의 "Bearer " 제거하고 JWT만 남김.
-            String token = auth.substring(7);
-
-            // 토큰 유효성 검증
-            // validate()가 보통 하는 일
-            // 서명(Signature) 검증: 위조/변조 여부 확인, 만료(exp) 확인: 시간이 지났는지, 토큰 형식이 정상인지
-            if (jwtProvider.validate(token)) {
-            	// 토큰에서 email 꺼내기
-            	// JWT payload의 sub(subject) 같은 곳에 email을 넣어두는 경우가 흔함. getUsername()는 거기서 값을 꺼내는 메서드.
-                String email = jwtProvider.getEmail(token);
-                
-                
-                System.out.println("UDS CLASS = " + userDetailsService.getClass());
-                System.out.println("JWT EMAIL = " + email);
-                
-                
-                // email으로 사용자 정보 로딩
-                // 여기서 DB든 메모리든 사용자 정보를 가져옴.
-                // 중요 포인트: 권한(authorities)을 얻으려고 이걸 함(ROLE_USER, ROLE_ADMIN 같은 권한 정보)
-                // 즉, 토큰에 role을 넣지 않았더라도 서버가 UserDetailsService로 다시 가져와서 권한을 채울 수 있음.
-                UserDetails user = userDetailsService.loadUserByUsername(email);
-
-                // 인증된 사요자 객체 만들기
-                // sernamePasswordAuthenticationToken의 두 가지 용도
-                // 1. 로그인 시도할 때: email/password 넣어서 authenticate()로 보냄
-                // 2. 로그인 완료 상태 만들 때: principal(UserDetails) + authorities 넣어서 “이미 인증됨”으로 만듦
-                // user : principal(누구냐) → UserDetails
-                // null : credentials(비밀번호) → 이미 인증 끝났으니 굳이 안 넣음
-                // user.getAuthorities() : 권한 목록
-                var authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                user, null, user.getAuthorities()
-                        );
-
-                // SecurityContext에 인증 정보 세팅
-                // Spring Security가 “이 요청은 인증된 요청이다”라고 판단하는 근거가 여기서 만들어짐.
-                // 이걸 해두면 이후에:.anyRequest().authenticated() 통과
-                // 컨트롤러 파라미터로 Authentication 주입 가능
-                // @AuthenticationPrincipal 사용 가능
-                // 즉 /me에서 public String me(Authentication authentication) 이게 값이 들어오는 이유가 바로 여기임.
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
-            }
+        // 헤더가 없거나 "Bearer "로 시작하지 않으면
+        // JWT 인증 대상이 아니므로 그냥 다음 필터로 넘김
+        if (auth == null || !auth.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        // 다음 필터/컨트롤러로 넘기기
-        // 이 줄을 호출해야 요청이 계속 진행돼서 컨트롤러까지 감.
-        // 이 줄이 없으면 요청이 여기서 멈춤.
+        // 실제 토큰 문자열만 추출
+        // "Bearer "는 7글자 (B e a r e r + 공백)
+        String token = auth.substring(7);
+
+        try {
+            // 1. JWT 파싱 + 서명/만료 검증 (한 번만)
+            // 여기서 실패하면 예외 발생 (만료, 위조, 형식 오류 등)
+            Claims claims = jwtProvider.parseAndValidate(token);
+
+            // 2. access 토큰인지 확인
+            // refresh 토큰이 Authorization 헤더로 오는 걸 방지
+            if (!jwtProvider.isAccessToken(claims)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            // 3. sub(subject)에 담아둔 userId 꺼내기
+            // JWT 설계상 sub = userId(PK)
+            Long userId = jwtProvider.getUserId(claims);
+
+            // 4. userId로 사용자 정보 로딩
+            // UserDetailsService의 메서드 이름은 username이지만
+            // 실제로는 "식별자 문자열"을 받는 용도라 userId를 문자열로 전달
+            UserDetails user = userDetailsService.loadUserByUsername(String.valueOf(userId));
+
+            // 5. 인증 객체 생성
+            // UsernamePasswordAuthenticationToken의 두 가지 용도
+            // 1) 로그인 시도용 (username/password)
+            // 2) 인증 완료 상태 표현용 (principal + authorities)
+            var authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            user,           // principal (누구인가)
+                            null,           // credentials (이미 인증 완료라 null)
+                            user.getAuthorities() // 권한 목록
+                    );
+
+            // 6. SecurityContext에 인증 정보 저장
+            // 이 이후부터 Spring Security는
+            // "이 요청은 인증된 사용자 요청이다"라고 판단
+            SecurityContextHolder.getContext()
+                    .setAuthentication(authentication);
+
+        } catch (JwtException | IllegalArgumentException e) {
+            // 토큰이 만료되었거나, 위조되었거나, 형식이 잘못된 경우
+            // 인증 정보 세팅 안 함
+            // 보호된 API에서는 SecurityConfig의 EntryPoint가 401 처리
+            SecurityContextHolder.clearContext();
+        }
+
+        // 다음 필터 / 컨트롤러로 요청 전달
         filterChain.doFilter(request, response);
     }
 }

@@ -2,13 +2,17 @@ package com.workflow.user.entity;
 
 import java.time.LocalDateTime;
 
+import com.workflow.user.enums.Role;
+import com.workflow.user.enums.UserStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -27,26 +31,38 @@ public class UserEntity {
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
+	@Column(nullable = false, unique = true)
 	private String email;
 	
-	@Column(name="password_hash")
+	@Column(name="password_hash", nullable = false)
 	private String password;
 	
+	@Column(nullable = false)
 	private String name;
-	private String department;
-	private String position;
-	private String role;
-	private String status;
 	
-	@Column(name="last_login_at")
+	@Column(nullable = false)
+	private String department;
+	
+	@Column(nullable = false)
+	private String position;
+	
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private Role role;
+	
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private UserStatus status;
+	
+	@Column(name="last_login_at", nullable = false)
 	private LocalDateTime lastLoginAt;
 	
 	// 업데이트 적용 안되게
-	@Column(name="created_at", updatable = false)
+	@Column(name="created_at", updatable = false, nullable = false)
 	private LocalDateTime createdAt;
 	
-	// 일단 막아 둠
-	@Column(name="updated_at")
+	
+	@Column(name="updated_at", nullable = false)
 	private LocalDateTime updatedAt;
 	
 	
@@ -56,14 +72,20 @@ public class UserEntity {
 	void prePersist(){
 		this.createdAt = LocalDateTime.now();
 		this.updatedAt = LocalDateTime.now();
+		// this.lastLoginAt = LocalDateTime.now();
 	}
 	
-	// 수정될 때 : UPDATE 직전
-	@PreUpdate
-	void preUpdate(){
-		this.updatedAt = LocalDateTime.now();
-	}
+	// 회원 정보 수정할때만 바끼도록 수정만들때 거기에 직접 대입하기.
+//	// 수정될 때 : UPDATE 직전
+//	@PreUpdate
+//	void preUpdate(){
+//		this.updatedAt = LocalDateTime.now();
+//	}
 
+	public void setUpdatedAt(LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt;
+	}
+	
 	public void setLastLoginAt(LocalDateTime lastLoginAt) {
 		this.lastLoginAt = lastLoginAt;
 	}

@@ -22,7 +22,7 @@ api.interceptors.request.use((config) => {
 });
 
 // refresh는 api 말고 "순수 axios"로 호출(무한루프 방지)
-const refreshClient = axios.create({
+export const refreshClient = axios.create({
   baseURL: "http://localhost:8081",
   withCredentials: true,
 });
@@ -47,6 +47,11 @@ api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
+
+    // // 로그 확인용
+    // if (error.response?.status === 401) {
+    //   console.log("[API 401]", original.method, original.url);
+    // }
 
     // 401이 아니면 패스
     if (error.response?.status !== 401) return Promise.reject(error);

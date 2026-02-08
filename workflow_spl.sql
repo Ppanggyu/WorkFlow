@@ -10,11 +10,14 @@ CREATE TABLE test (
 	age BIGSERIAL
 );
 
-SELECT * FROM test;
 
 SELECT * FROM users;
+SELECT * FROM tasks;
+SELECT * FROM comments;
+SELECT * FROM attachments;
+SELECT * FROM audit_logs;
+SELECT * FROM refresh_tokens;
 
-DROP TABLE test;
 
 DROP TABLE refresh_tokens;
 DROP TABLE audit_logs;
@@ -27,9 +30,9 @@ DELETE FROM users;
 
 
 -- 계정 3개
-INSERT INTO users VALUES (1, 'admin', '$2a$10$t8zVyp9gVqPhTdT0XG4RIOdg9PbLRuHvj8GMjcwUqt7jyvdO.D4HK', '김워크', 'CEO', '관리자', 'ADMIN', 'DISABLED', now(), now());
-INSERT INTO users VALUES (2, 'song', '$2a$10$t8zVyp9gVqPhTdT0XG4RIOdg9PbLRuHvj8GMjcwUqt7jyvdO.D4HK', '송현오', '개발부', '부장', 'USER', 'DISABLED', now(), now());
-INSERT INTO users VALUES (3, 'lim', '$2a$10$t8zVyp9gVqPhTdT0XG4RIOdg9PbLRuHvj8GMjcwUqt7jyvdO.D4HK', '임현규', '개발부', '주임', 'USER', 'DISABLED', now(), now());
+INSERT INTO users VALUES (1, 'admin', '$2a$10$t8zVyp9gVqPhTdT0XG4RIOdg9PbLRuHvj8GMjcwUqt7jyvdO.D4HK', '김워크', 'CEO', '관리자', 'ADMIN', 'DISABLED', now(), now(), now());
+INSERT INTO users VALUES (2, 'song', '$2a$10$t8zVyp9gVqPhTdT0XG4RIOdg9PbLRuHvj8GMjcwUqt7jyvdO.D4HK', '송현오', '개발부', '부장', 'USER', 'DISABLED', now(), now(),now());
+INSERT INTO users VALUES (3, 'lim', '$2a$10$t8zVyp9gVqPhTdT0XG4RIOdg9PbLRuHvj8GMjcwUqt7jyvdO.D4HK', '임현규', '개발부', '주임', 'USER', 'DISABLED', now(), now(), now());
 
 
 CREATE TABLE users (
@@ -42,8 +45,8 @@ CREATE TABLE users (
 	role VARCHAR(20) NOT NULL,
 	status VARCHAR(20) NOT NULL,
 	last_login_at timestamp(6) without time zone NULL,
-	created_at timestamp(6) without time zone NULL,
-	updated_at timestamp(6) without time zone NULL
+	created_at timestamp(6) without time zone NOT NULL,
+	updated_at timestamp(6) without time zone NOT NULL
 );
 
 CREATE TABLE tasks (
@@ -110,8 +113,8 @@ CREATE TABLE audit_logs(
 );
 
 CREATE TABLE refresh_tokens(
-    id BIGSERIAL,
-    user_id BIGINT NOT NULL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
     token_hash VARCHAR(255) NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
     revoked_at TIMESTAMPTZ NULL,

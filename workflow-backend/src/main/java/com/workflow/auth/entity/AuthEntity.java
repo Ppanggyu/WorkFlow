@@ -14,15 +14,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
 @Entity
 @Table(name="refresh_tokens")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
@@ -39,13 +38,16 @@ public class AuthEntity {
 	@JoinColumn(name = "user_id", nullable = false) // FK
     private UserEntity user;
 	
+	@Column(nullable = false)
     private String tokenHash;
     
-    @Column(name="expires_at", updatable = false)
+    @Column(name="expires_at", nullable = false)
     private LocalDateTime expiresAt; // 유효 시각
+    
     @Column(name="revoked_at")
-    private LocalDateTime revokedAt; // 죽인 시각
-    @Column(name="created_at")
+    private LocalDateTime revokedAt; // 로그아웃/강제 폐기 시각
+    
+    @Column(name="created_at", updatable=false, nullable = false)
     private LocalDateTime createdAt; // 생성 시각
     
 	// 자동 시간 세팅
@@ -53,14 +55,27 @@ public class AuthEntity {
 	@PrePersist
 	void prePersist(){
 		this.createdAt = LocalDateTime.now();
-		this.expiresAt = LocalDateTime.now().plusDays(7);
+		if (this.expiresAt == null) {
+	        this.expiresAt = LocalDateTime.now().plusDays(7);
+	    }
 	}
 	
 	@Builder
-    private AuthEntity(UserEntity user, String tokenHash) {
+    private AuthEntity(UserEntity user) {
         this.user = user;
-        this.tokenHash = tokenHash;
     }
+
+	public void setTokenHash(String tokenHash) {
+		this.tokenHash = tokenHash;
+	}
+
+	public void setExpiresAt(LocalDateTime expiresAt) {
+		this.expiresAt = expiresAt;
+	}
+
+	public void setRevokedAt(LocalDateTime revokedAt) {
+		this.revokedAt = revokedAt;
+	}
 
 
 }

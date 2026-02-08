@@ -13,9 +13,12 @@ import com.workflow.auth.dto.Tokens;
 import com.workflow.auth.entity.AuthEntity;
 import com.workflow.auth.jwt.JwtProvider;
 import com.workflow.auth.repository.AuthRepository;
+import com.workflow.common.exception.UnauthorizedException;
 import com.workflow.user.entity.UserEntity;
 import com.workflow.user.repository.UserRepository;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -37,66 +40,90 @@ public class AuthService {
 	public Tokens login(String email, String rawPassword) {
 		
 		UserEntity user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new RuntimeException("이메일 다름"));
+				.orElseThrow(() -> new UnauthorizedException("이메일 또는 비밀번호가 다릅니다."));
 		
 		if(!passwordEncoder.matches(rawPassword, user.getPassword())) {
 			// throw new RuntimeException("비밀번호 다름"); = 애가 실행되면 메서드가 종료
-			throw new RuntimeException("비밀번호 다름");
+			throw new UnauthorizedException("이메일 또는 비밀번호가 다릅니다.");
 		}
 		
 		user.setLastLoginAt(LocalDateTime.now());
 		
-		String accessToken = jwtProvider.createAccessToken(user.getEmail(), user.getRole());
-		String refresToken = jwtProvider.createRefreshToken(user.getEmail());
+		String accessToken = jwtProvider.createAccessToken(user.getId(), user.getRole().name());
+		String refreshToken = jwtProvider.createRefreshToken(user.getId());
 		
 		// 해시값 변경
-		String hashToken = hash(refresToken);
-		// DB에 리프래쉬 토큰 저장하기
-		AuthEntity authEntity = AuthEntity.builder()
-				.user(user)
-				.tokenHash(hashToken)
-				.build();
-		authRepository.save(authEntity);
+		String hashToken = hash(refreshToken);
 		
-		return new Tokens(accessToken, refresToken);	
+		// DB에 리프래쉬 토큰 저장하기
+	    // 있으면 갱신, 없으면 생성
+		// 현재 유효한 토큰 열을 찾음
+	    AuthEntity auth = authRepository.findByUserAndRevokedAtIsNull(user)
+	    		// 있으면 그 열을 쓰고 없으면 새로 만듬
+	            .orElseGet(() -> AuthEntity.builder().user(user).build());
+	    auth.setTokenHash(hashToken);
+	    auth.setRevokedAt(null); // revokedAt가 있다면 로그인 시 다시 활성화
+	    auth.setExpiresAt(LocalDateTime.now().plusDays(7)); // 만료 갱신
+	    authRepository.save(auth);
+		
+		return new Tokens(accessToken, refreshToken);	
 		
 	}
 	
 	// 리프래쉬 토큰으로 액세스 토큰 발급
-	@Transactional // (readOnly = true)
-	public String refresh(String refreshToken) {
-		
-		if(refreshToken == null || !jwtProvider.validate(refreshToken) || !jwtProvider.isRefreshToken(refreshToken)) {
-			throw new RuntimeException("리프레시 토큰 유효 X");
-		}
-		
-		String email = jwtProvider.getClaims(refreshToken).getSubject();
-		
-		// DB에 이메일 있는지 비교 및 값 가져오기
-//		UserEntity user = userRepository.findByEmail(email)
-//				.orElseThrow(() -> new RuntimeException("사용자 못 찾음"));
-		
-		// RefreshToken 토큰 해시값 변경
-		String hashToken = hash(refreshToken);
-		// RefreshToken 토큰 찾기
-		AuthEntity auth = authRepository.findByTokenHashAndRevokedAtIsNull(hashToken)
-				.orElseThrow(() -> new RuntimeException("로그아웃 또는 폐기된 토큰"));
-		
-		// AuthEntity의 FK덕분에 위 상황이 맞다면 알아서 참조해서 가져옴
-		UserEntity user = auth.getUser();
-		
-		return jwtProvider.createAccessToken(user.getEmail(), user.getRole());
-	}
+    @Transactional(readOnly = true)
+    public String refresh(String refreshToken) {
+
+        if (refreshToken == null) throw new UnauthorizedException("인증 정보가 유효하지 않습니다.");
+
+        try {
+            // 서명/만료 검증 + 파싱 (한 번)
+            Claims claims = jwtProvider.parseAndValidate(refreshToken);
+
+            // refresh 토큰인지 확인
+            if (!jwtProvider.isRefreshToken(claims)) {
+                throw new UnauthorizedException("리프레시 토큰 타입이 아닙니다.");
+            }
+
+            // sub(subject) = userId
+            Long userId = jwtProvider.getUserId(claims);
+
+            // RefreshToken 토큰 해시값 변경
+            String hashToken = hash(refreshToken);
+
+            // RefreshToken 토큰 찾기(폐기 안 된 것만)
+            AuthEntity auth = authRepository.findByTokenHashAndRevokedAtIsNull(hashToken)
+                    .orElseThrow(() -> new UnauthorizedException("로그아웃 또는 폐기된 토큰입니다."));
+
+            // 토큰과 유저 매칭 검증
+            // 토큰은 위조가 아니더라도, DB에 있는 토큰의 user와 claims의 userId를 비교해서 확인
+            if (!auth.getUser().getId().equals(userId)) {
+                throw new UnauthorizedException("토큰 사용자가 불일치합니다.");
+            }
+
+            UserEntity user = auth.getUser();
+
+            // 새 access 발급
+            return jwtProvider.createAccessToken(user.getId(), user.getRole().name());
+
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new UnauthorizedException("리프레시 토큰이 유효하지 않습니다.");
+        }
+    }
 	
 	@Transactional 
 	public void logout(String logoutRefreshToken) {
+		
+		if (logoutRefreshToken == null) {
+	        throw new UnauthorizedException("인증 정보가 유효하지 않습니다.");
+	    }
 		
 		// RefreshToken 가져와서 해시값으로 변경
 		String hashToken = hash(logoutRefreshToken);
 		
 		// 해시값으로 변경한 RefreshToken 찾기
 		AuthEntity auth = authRepository.findByTokenHashAndRevokedAtIsNull(hashToken)
-		.orElseThrow(() -> new RuntimeException("이미 로그아웃"));
+		.orElseThrow(() -> new UnauthorizedException("인증 정보가 유효하지 않습니다."));
 		
 		// 로그아웃 누른 현 시점 시각 넣음
 		auth.setRevokedAt(LocalDateTime.now());

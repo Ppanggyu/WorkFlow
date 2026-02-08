@@ -45,30 +45,24 @@ useEffect(() => {
         <div className="card bigCard2">
           <div className="cardTitle">Activity Log</div>
           <div className="muted">(상태/담당자/마감일 변경 이력)
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
-            <p>asdasdasdas</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
+            <p>확인용</p>
           </div>
         </div>
       </section>
