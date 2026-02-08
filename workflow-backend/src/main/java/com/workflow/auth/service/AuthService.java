@@ -15,6 +15,7 @@ import com.workflow.auth.jwt.JwtProvider;
 import com.workflow.auth.repository.AuthRepository;
 import com.workflow.common.exception.UnauthorizedException;
 import com.workflow.user.entity.UserEntity;
+import com.workflow.user.enums.UserStatus;
 import com.workflow.user.repository.UserRepository;
 
 import io.jsonwebtoken.Claims;
@@ -37,19 +38,21 @@ public class AuthService {
 	private String hashSecret;
 	
 	
-	public Tokens login(String email, String rawPassword) {
+	public Tokens login(UserEntity userEntity) {
 		
-		UserEntity user = userRepository.findByEmail(email)
+		UserEntity user = userRepository.findByEmail(userEntity.getEmail())
 				.orElseThrow(() -> new UnauthorizedException("이메일 또는 비밀번호가 다릅니다."));
 		
-		if(!passwordEncoder.matches(rawPassword, user.getPassword())) {
+		if(!passwordEncoder.matches(userEntity.getPassword(), user.getPassword())) {
 			// throw new RuntimeException("비밀번호 다름"); = 애가 실행되면 메서드가 종료
 			throw new UnauthorizedException("이메일 또는 비밀번호가 다릅니다.");
 		}
 		
+		// 유저 상태 및 마지막 로그인 시간 업데이트
+		user.setStatus(UserStatus.ACTIVE);
 		user.setLastLoginAt(LocalDateTime.now());
 		
-		String accessToken = jwtProvider.createAccessToken(user.getId(), user.getRole().name());
+		String accessToken = jwtProvider.createAccessToken(user);
 		String refreshToken = jwtProvider.createRefreshToken(user.getId());
 		
 		// 해시값 변경
@@ -62,10 +65,12 @@ public class AuthService {
 	    		// 있으면 그 열을 쓰고 없으면 새로 만듬
 	            .orElseGet(() -> AuthEntity.builder().user(user).build());
 	    auth.setTokenHash(hashToken);
-	    auth.setRevokedAt(null); // revokedAt가 있다면 로그인 시 다시 활성화
+	    auth.setRevokedAt(null);
 	    auth.setExpiresAt(LocalDateTime.now().plusDays(7)); // 만료 갱신
 	    authRepository.save(auth);
-		
+	    
+	    
+	    
 		return new Tokens(accessToken, refreshToken);	
 		
 	}
@@ -104,7 +109,7 @@ public class AuthService {
             UserEntity user = auth.getUser();
 
             // 새 access 발급
-            return jwtProvider.createAccessToken(user.getId(), user.getRole().name());
+            return jwtProvider.createAccessToken(user);
 
         } catch (JwtException | IllegalArgumentException e) {
             throw new UnauthorizedException("리프레시 토큰이 유효하지 않습니다.");
@@ -127,6 +132,9 @@ public class AuthService {
 		
 		// 로그아웃 누른 현 시점 시각 넣음
 		auth.setRevokedAt(LocalDateTime.now());
+		
+		// 로그아웃 시 상태 업데이트
+		auth.getUser().setStatus(UserStatus.DISABLED);
 	}
 	
 	

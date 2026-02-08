@@ -1,16 +1,20 @@
 import { Outlet, NavLink } from "react-router-dom";
 import "./MainLayout.css";
-import logo from "../assets/images/Logo.png";
+import MainLogo from "../assets/images/Logo.png";
 import { useLogout } from "../pages/auth/useLogout";
+import { useAuth } from "../pages/auth/useAuth";
 
 export default function MainLayout() {
 
    const logout = useLogout();
+   const { user } = useAuth();
+
+   console.log(user);
 
   return (
     <div className="appShell">
       <aside className="sidebar">
-        <div className="sidebarTitle"><img className="logo" src={logo} alt="logo"/></div>
+        <div className="sidebarTitle"><img className="MainLogo" src={MainLogo} alt="MainLogo"/></div>
         <nav className="sidebarNav">
           <NavLink to="/" end className={({ isActive }) => `navItem ${isActive ? 'active' : ''}`}>
             Dashboard
@@ -41,9 +45,9 @@ export default function MainLayout() {
           <div className="headerTitle">Dashboard</div>
           <div className="headerActions">
             <button className="ghostBtn">Search</button>
+            {/* <button className="ghostBtn">Profile</button> */}
             <button className="ghostBtn">Notifications</button>
-            <button className="ghostBtn">Profile</button>
-            <NavLink to="/login"><button className="ghostBtn">Login</button></NavLink>
+            <button className="ghostBtn">{user?.name}님</button>
             <button onClick={logout} className="ghostBtn">logout</button>
           </div>
         </header>

@@ -90,4 +90,8 @@ public class UserEntity {
 		this.lastLoginAt = lastLoginAt;
 	}
 
+	public void setStatus(UserStatus status) {
+		this.status = status;
+	}
+
 }

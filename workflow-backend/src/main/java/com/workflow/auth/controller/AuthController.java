@@ -26,8 +26,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserEntity userEntity, HttpServletResponse res){
-
-        Tokens tokens = authService.login(userEntity.getEmail(), userEntity.getPassword());
+    	
+        Tokens tokens = authService.login(userEntity);
 
         // 확인용
         // System.out.println("Access 토큰: " + tokens.getAccessToken());

@@ -13,6 +13,8 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.workflow.user.entity.UserEntity;
+
 import io.jsonwebtoken.Claims;
 // jjwt 라이브러리(0.12.x)의 핵심 클래스들
 // Jwts.builder() : 토큰 만들기
@@ -55,7 +57,7 @@ public class JwtProvider {
 	// Access 토큰 생성
 	// now: 현재 시간
 	// exp: 현재 시간 + 만료시간 = 토큰 만료 시각
-	public String createAccessToken(Long userId, String role) {
+	public String createAccessToken(UserEntity userEntity) {
 		Date now = new Date();
 		Date exp = new Date(now.getTime() + accessExpMillis);
 
@@ -63,9 +65,12 @@ public class JwtProvider {
 		return Jwts.builder()
 				// .subject(email) : payload의 sub(subject) 클레임에 email 저장
 				// 이걸 나중에 getEmail()으로 다시 꺼냄
-				.subject(String.valueOf(userId))
+				.subject(String.valueOf(userEntity.getId()))
 				// 추가 정보 넣기(우린 권한)
-				.claim("role", role).claim("typ", "access")
+				.claim("role", userEntity.getRole().name())
+				.claim("typ", "access")
+				.claim("name", userEntity.getName())
+				.claim("email", userEntity.getEmail())
 				// issuedAt(now) : iat(issued at): 언제 발급됐는지 기록
 				.issuedAt(now)
 				// .expiration(exp) : exp: 언제 만료되는지 기록

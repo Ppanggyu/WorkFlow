@@ -119,7 +119,7 @@ CREATE TABLE refresh_tokens(
     expires_at TIMESTAMPTZ NOT NULL,
     revoked_at TIMESTAMPTZ NULL,
     created_at TIMESTAMPTZ NOT NULL,
-    FOREIGN KEY (id) REFERENCES users (id)
+    FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
 -- 생성된 테이블 조회

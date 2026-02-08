@@ -1,13 +1,27 @@
 import { useEffect, useState } from "react";
 import { AuthCtx } from "./AuthContext";
 import { refreshClient, setApiAccessToken } from "../api/api";
+import { jwtDecode } from "jwt-decode";
 
 export default function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);
+  const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     setApiAccessToken(accessToken);
+
+    if (accessToken) {
+     const decoded = jwtDecode(accessToken);
+     setUser({
+       id: decoded.sub,
+       email: decoded.email,
+       role: decoded.role,
+       name: decoded.name
+     });
+   } else {
+     setUser(null);
+   }
   }, [accessToken]);
 
 useEffect(() => {
@@ -39,7 +53,7 @@ useEffect(() => {
   if (!authReady) return null;
 
   return (
-    <AuthCtx.Provider value={{ accessToken, setAccessToken }}>
+    <AuthCtx.Provider value={{ accessToken, setAccessToken, user }}>
       {children}
     </AuthCtx.Provider>
   );

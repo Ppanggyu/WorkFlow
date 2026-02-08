@@ -1,8 +1,9 @@
-import './Login.css'
+import '../css/Login.css'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from './useAuth';
 import { api } from "../api/api";
+import LoginLogo from "../../assets/images/Logo.png";
 
 function Login()  {
 
@@ -24,10 +25,12 @@ const loginHandle = async () => {
 };
 
     return (
-        <div>
-            <h2>로그인</h2>
+      <div className='loginPage'>
+        <div className='loginBox'>
+            <img className="LoginLogo" src={LoginLogo} alt="LoginLogo"/>
 
             <input
+            classname='email'
             type='email'
             placeholder='이메일'
             value={email}
@@ -35,14 +38,16 @@ const loginHandle = async () => {
             />
 
             <input
+            classname='password'
             type='password'
             placeholder='비밀번호'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             />
 
-            <button onClick={loginHandle}>로그인</button>
+            <button className='loginBtn' onClick={loginHandle}>로그인</button>
         </div>
+      </div>
     ); 
 }
 
