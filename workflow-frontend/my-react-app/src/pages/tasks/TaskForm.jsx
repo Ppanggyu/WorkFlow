@@ -4,7 +4,7 @@ import 'react-quill/dist/quill.snow.css';
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from "../auth/useAuth";
 import { api } from "../api/api";
-import "../css/taskForm.css";
+import "../css/TaskForm.css";
 
 export default function TaskInput() {
   const { accessToken } = useAuth();
