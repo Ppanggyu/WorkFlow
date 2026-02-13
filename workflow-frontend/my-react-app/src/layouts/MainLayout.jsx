@@ -1,15 +1,30 @@
-import { Outlet, NavLink } from "react-router-dom";
+import { Outlet, NavLink, useLocation } from "react-router-dom";
 import "./MainLayout.css";
 import MainLogo from "../assets/images/Logo.png";
 import { useLogout } from "../pages/auth/useLogout";
 import { useAuth } from "../pages/auth/useAuth";
+import { useEffect } from "react";
 
 export default function MainLayout() {
 
    const logout = useLogout();
    const { user } = useAuth();
 
-   console.log(user);
+   
+   const {pathname} = useLocation();
+
+   const titleMap = {
+    "/": "Dashboard",
+    "/tasks": "Tasks"
+   }
+
+   const title = titleMap[pathname] ?? "WorkFlow";
+
+   useEffect(() => {
+    document.title = title;
+   }, [title]);
+
+  //  console.log(user);
 
   return (
     <div className="appShell">

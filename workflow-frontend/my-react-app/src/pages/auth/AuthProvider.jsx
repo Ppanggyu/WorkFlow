@@ -58,7 +58,7 @@ try {
   if (!authReady) return null;
 
   return (
-    <AuthCtx.Provider value={{ accessToken, setAccessToken, user }}>
+    <AuthCtx.Provider value={{ accessToken, setAccessToken, user, authReady }}>
       {children}
     </AuthCtx.Provider>
   );

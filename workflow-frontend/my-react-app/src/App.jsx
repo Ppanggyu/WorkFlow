@@ -4,6 +4,8 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import Login from "./pages/auth/Login";
 import AuthProvider from "./pages/auth/AuthProvider";
 import ProtectedRoute from "./pages/auth/ProtectedRoute";
+import Tasks from "./pages/tasks/Tasks"
+import TaskForm from "./pages/tasks/TaskForm"
 
 export default function App() {
   return (
@@ -13,6 +15,8 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/taskForm" element={<TaskForm />} />
           </Route>
         </Route>
 

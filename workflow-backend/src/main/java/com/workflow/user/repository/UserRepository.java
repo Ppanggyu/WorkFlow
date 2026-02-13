@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.workflow.user.dto.UserDTO;
 import com.workflow.user.entity.UserEntity;
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
@@ -14,6 +15,9 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     // ...
 	// }
 	Optional<UserEntity> findByEmail(String email);
+	
+	Optional<UserDTO> findDTOById(Long id);
 
+	Optional<UserEntity> findById(Long id);
 	
 }
