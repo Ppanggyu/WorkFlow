@@ -23,7 +23,8 @@ public record TaskDTO(
         DepartmentDTO ownerDepartmentId,
         DepartmentDTO workDepartmentId,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt) {
+        LocalDateTime updatedAt
+		) {
     
 	
 	

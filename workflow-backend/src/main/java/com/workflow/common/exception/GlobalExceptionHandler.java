@@ -36,4 +36,8 @@ public class GlobalExceptionHandler {
                 .status(500)
                 .body(ApiError.of("INTERNAL_ERROR", "서버 오류가 발생했습니다."));
     }
+    
+    
+
+    
 }

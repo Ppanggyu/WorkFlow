@@ -1,6 +1,7 @@
 package com.workflow.tasks.dto;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.workflow.tasks.enums.Priority;
 import com.workflow.tasks.enums.Status;
@@ -17,6 +18,9 @@ public record TaskCreateRequestDTO(
 
 		Long assigneeId, 
 		Long ownerDepartmentId, 
-		Long workDepartmentId) {
+		Long workDepartmentId,
+		
+		List<TempImageDTO> tempImages) {
+	
 
 }

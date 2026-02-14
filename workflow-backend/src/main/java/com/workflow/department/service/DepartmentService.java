@@ -30,7 +30,7 @@ public class DepartmentService {
 		List<AssigneeSelectDTO> departmentList = departmentRepository.findAllForAssigneeSelect();
 		
 		boolean userRole = role.stream()
-				.anyMatch(auth -> auth.getAuthority().equals("ROLE_USER"));
+				.anyMatch(auth -> auth.getAuthority().equals("ROLE_CEO"));
 		
 		List<String> priority = Arrays.stream(Priority.values())
 				.map(Enum::name)
@@ -40,7 +40,7 @@ public class DepartmentService {
 				.map(Enum::name)
 				.collect(Collectors.toList());
 		
-		if(userRole) {		
+		if(!userRole) {		
 			visibility.remove("PUBLIC");
 		}
 		
