@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { useNavigate } from 'react-router-dom'
@@ -73,7 +73,7 @@ export default function TaskInput() {
     }, []);
 
   // 이미지 업로드
-  function imageHandler() {
+  const imageHandler = useCallback(() => {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
     input.setAttribute('accept', 
@@ -100,7 +100,7 @@ export default function TaskInput() {
         setTempImages(prev => [...prev, {url: fullUrl, path: new URL(fullUrl).pathname}]);
       }catch(e){
         alert(e.response.data.message);
-      }};}
+      }};}, [uuid]);
   
   // 이미지 삭제
   function deleteImageHanlder(content, delta, source, editor) {
@@ -141,6 +141,7 @@ export default function TaskInput() {
         },
       },
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

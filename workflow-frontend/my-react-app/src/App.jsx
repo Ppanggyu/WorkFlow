@@ -4,8 +4,9 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import Login from "./pages/auth/Login";
 import AuthProvider from "./pages/auth/AuthProvider";
 import ProtectedRoute from "./pages/auth/ProtectedRoute";
-import Tasks from "./pages/tasks/Tasks"
-import TaskForm from "./pages/tasks/TaskForm"
+import Tasks from "./pages/tasks/Tasks";
+import TaskForm from "./pages/tasks/TaskForm";
+import TaskSelected from "./pages/tasks/TaskSelected";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/taskForm" element={<TaskForm />} />
+            <Route path="/taskSelected/:taskId" element={<TaskSelected />} />
           </Route>
         </Route>
 

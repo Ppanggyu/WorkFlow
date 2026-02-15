@@ -11,6 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
 //		if (System.getProperty("os.name").toLowerCase().contains("win")) {
 			registry.addResourceHandler("/temp/**").addResourceLocations("file:///C:/WorkFlow/temp/");			
+			registry.addResourceHandler("/**").addResourceLocations("file:///C:/WorkFlow");			
 //		}else {
 //			
 //		}

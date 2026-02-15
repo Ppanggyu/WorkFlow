@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,27 +43,34 @@ public class TaskService {
 	private final UserRepository userRepository;
 	private final String WIN_TEMP_DIR = "C:/WorkFlow/";
 
-	public List<TasksView> tasks(Long id, String filter) {
-		List<TasksView> taskList = null;
+	public Page<TasksView> tasks(Long id, String filter, Pageable pageable, Status selecteStatus) {
+		Page<TasksView> taskList = null;
 		UserEntity user = userRepository.findById(id).orElseThrow(() -> new UnauthorizedException("오류"));
 
-		switch (filter != null ? filter : "all") {
+		switch ((selecteStatus == null) && filter != null ? filter : "all") {
 		case "company":
-			taskList = taskRepository.findByIsDeletedFalseAndVisibility(Visibility.PUBLIC);
+			taskList = taskRepository.findByIsDeletedFalseAndVisibility(Visibility.PUBLIC, pageable);
 			break;
 		case "myDepartment":
-			taskList = taskRepository.findByIsDeletedFalseAndWorkDepartmentId(user.getDepartmentId());
+			taskList = taskRepository.findByIsDeletedFalseAndWorkDepartmentId(user.getDepartmentId(), pageable);
 			break;
 		case "create":
-			taskList = taskRepository.findTasksByIsDeletedFalseAndCreatedById(id);
+			taskList = taskRepository.findTasksByIsDeletedFalseAndCreatedById(id, pageable);
 			break;
 		case "assignee":
-			taskList = taskRepository.findByIsDeletedFalseAndAssigneeId(user);
+			taskList = taskRepository.findByIsDeletedFalseAndAssigneeId(user, pageable);
 			break;
 		case "all":
 		default:
-			taskList = taskRepository.findAllByIsDeletedFalse();
+//			taskList = taskRepository.findAllByIsDeletedFalse(pageable);
 			break;
+		}
+		
+		if(selecteStatus != null && filter == null) {
+//			selecteStatus 얘만 있을때
+//			filter 얘만 있을때
+//
+//			selecteStatus filter 둘 다 있을 때 20260215 멈춤
 		}
 
 		return taskList;
@@ -88,16 +97,31 @@ public class TaskService {
 				.priority(taskCreateRequestDTO.priority()).visibility(taskCreateRequestDTO.visibility())
 				.dueDate(taskCreateRequestDTO.dueDate()).isDeleted(false).createdBy(creator).assigneeId(assignee)
 				.ownerDepartmentId(createrDepartment).workDepartmentId(assigneeDepartment).build();
-
-		taskRepository.save(task);
 		
+		
+		// 1. save 두번해도 서버 부하는 없는 수준 + 직관적
+		// 2. saveAndFlush + save 쓰면 id를 즉시 DB에서 보장받지만 대량 처리시 부하 증가
+		taskRepository.save(task);
 		Long newTaskId = task.getId();
+		String updatedDescription;
 		
 		if(!taskCreateRequestDTO.tempImages().isEmpty()) {
 			moveTempImages(taskCreateRequestDTO.tempImages(), newTaskId);
+			Path tempFilePath = Paths.get(taskCreateRequestDTO.tempImages().get(0).path()); // temp/uuid폴더/uuid파일
+			String uuidFolderName = tempFilePath.getParent().getFileName().toString(); // uuid폴더
+			updatedDescription = task.getDescription()
+					.replace("/temp/" + uuidFolderName,
+							"/" + newTaskId);
+			task.setDescription(updatedDescription);
+			taskRepository.save(task);
 		}
 		
-
+	}
+	
+	public TasksView taskSelected(Long taskId){
+		TasksView selected = taskRepository.findProjectedById(taskId)
+				.orElseThrow(() -> new RuntimeException("없음"));
+		return selected;
 	}
 
 	// 이미지 업로드
@@ -169,7 +193,6 @@ public class TaskService {
 		Path tempFilePath = Paths.get(tempImages.get(0).path()); // temp/uuid폴더/uuid파일
 		
 		String uuidFolderName = tempFilePath.getParent().toString(); // temp/uuid폴더
-//		String uuidFileName = tempFilePath.getFileName().toString(); // uuid파일
 		
 		Path tempPath = Paths.get(WIN_TEMP_DIR, "temp"); // C:\WorkFlow\temp
 		Path taskFolder = Paths.get(WIN_TEMP_DIR, newTaskId.toString()); // C:/WorkFlow/게시글번호

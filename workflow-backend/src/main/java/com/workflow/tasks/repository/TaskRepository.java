@@ -1,7 +1,9 @@
 package com.workflow.tasks.repository;
 
-import java.util.List;
+import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.workflow.department.entity.DepartmentEntity;
@@ -12,14 +14,16 @@ import com.workflow.user.entity.UserEntity;
 
 public interface TaskRepository extends JpaRepository<TasksEntity, Long> {
 	
-	List<TasksView> findByIsDeletedFalseAndVisibility(Visibility visibility);
+	Page<TasksView> findByIsDeletedFalseAndVisibility(Visibility visibility, Pageable pageable);
 	
-	List<TasksView> findByIsDeletedFalseAndWorkDepartmentId(DepartmentEntity departmentEntity);
+	Page<TasksView> findByIsDeletedFalseAndWorkDepartmentId(DepartmentEntity departmentEntity, Pageable pageable);
 
-	List<TasksView> findAllByIsDeletedFalse();
+	Page<TasksView> findAllByIsDeletedFalse(Pageable pageable);
 	
-	List<TasksView> findTasksByIsDeletedFalseAndCreatedById(Long id);
+	Page<TasksView> findTasksByIsDeletedFalseAndCreatedById(Long id, Pageable pageable);
 	
-	List<TasksView> findByIsDeletedFalseAndAssigneeId(UserEntity user);
+	Page<TasksView> findByIsDeletedFalseAndAssigneeId(UserEntity user, Pageable pageable);
+	
+	Optional<TasksView> findProjectedById(Long taskId);
 
 }

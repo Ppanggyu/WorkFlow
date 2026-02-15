@@ -6,7 +6,7 @@
 /* 카드 격자 */
 .tasks-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 4열 */
+  grid-template-columns: repeat(3, 1fr); /* 4열 */
   gap: 20px;
 }
 

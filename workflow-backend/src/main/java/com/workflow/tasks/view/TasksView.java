@@ -10,6 +10,7 @@ import com.workflow.user.view.UserView;
 
 public interface TasksView {
 	
+	Long getId();
 	String getTitle();
     String getDescription();
     Status getStatus();
