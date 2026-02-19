@@ -1,0 +1,120 @@
+/* 전체 컨테이너 */
+.task-selected-container {
+  max-width: 90%;
+  margin: 20px auto;
+  padding: 25px;
+  background-color: #fdfdfd;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  font-family: 'Arial', sans-serif;
+  color: #333;
+}
+
+/* 로딩 텍스트 */
+.task-selected-loading {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #666;
+  margin-top: 50px;
+}
+
+/* 제목 + 배지 */
+.task-selected-title {
+  display: flex;
+  justify-content: space-between; /* 제목 왼쪽, 배지 오른쪽 끝 */
+  align-items: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+/* 제목 텍스트 */
+.title-text {
+  flex-shrink: 1;
+}
+
+/* 배지 그룹 */
+.task-badges {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* 공통 배지 스타일 */
+.task-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-align: center;
+  min-width: 60px;
+}
+
+/* 상태 색상 */
+.status-TODO { background-color: #f39c12; }
+.status-IN_PROGRESS { background-color: #3498db; }
+.status-REVIEW { background-color: #9b59b6; }
+.status-DONE { background-color: #2ecc71; }
+.status-CANCELED { background-color: #e74c3c; }
+.status-ON_HOLD { background-color: #95a5a6; }
+
+/* 우선순위 색상 */
+.priority-LOW { background-color: #f39c12; }
+.priority-MEDIUM { background-color: #3498db; }
+.priority-HIGH { background-color: #9b59b6; }
+
+/* Visibility 색상 */
+.visibility-PUBLIC {background-color: #007bff;}
+.visibility-DEPARTMENT {background-color: #17a2b8;}
+.visibility-PRIVATE {background-color: #6c757d;}
+
+/* 일반 정보 항목 */
+.task-selected-info {
+  display: flex;
+  gap: 10px;
+  margin: 6px 0;
+  line-height: 1.5;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #eee;
+}
+
+/* 레이블 */
+.task-selected-label {
+  font-weight: bold;
+  min-width: 130px;
+}
+
+/* description HTML */
+.task-selected-description {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  line-height: 1.6;
+  color: #444;
+}
+
+/* 모바일 반응형 */
+@media screen and (max-width: 600px) {
+  .task-selected-container {
+    padding: 15px;
+  }
+
+  .task-selected-title {
+    font-size: 1.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .task-badges {
+    justify-content: flex-start;
+  }
+
+  .task-selected-label {
+    min-width: 90px;
+  }
+}

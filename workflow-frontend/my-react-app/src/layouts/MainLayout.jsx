@@ -15,7 +15,8 @@ export default function MainLayout() {
 
    const titleMap = {
     "/": "Dashboard",
-    "/tasks": "Tasks"
+    "/tasks": "Tasks",
+    "/taskForm": "Task Form"
    }
 
    const title = titleMap[pathname] ?? "WorkFlow";
@@ -57,7 +58,7 @@ export default function MainLayout() {
 
       <div className="mainCol">
         <header className="header">
-          <div className="headerTitle">Dashboard</div>
+          <div className="headerTitle">{title}</div>
           <div className="headerActions">
             <button className="ghostBtn">Search</button>
             {/* <button className="ghostBtn">Profile</button> */}

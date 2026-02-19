@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from "../api/api";
 import DOMPurify from "dompurify";
+import "../css/taskSelected.css"
 
 export default function TaskSelected() {
 
@@ -29,23 +30,42 @@ export default function TaskSelected() {
         return <div>로딩중...</div>;
     }
 
-    return(
-        <div>
-        <div>제목 : {selectedTask.title}</div>
-        <p>작성자 : {selectedTask.createdBy?.name}</p>
-        작성부서 : {selectedTask.ownerDepartmentId?.name}
-        <p>담당자 : {selectedTask.assigneeId?.name}</p>
-        <p>담당/처리 부서 : {selectedTask.workDepartmentId?.name}</p>
-        <p>작성일 : {selectedTask.createdAt && new Date(selectedTask.createdAt).toLocaleString()}</p>
-        <p>수정일 : {selectedTask.updatedAt && new Date(selectedTask.updatedAt).toLocaleString()}</p>
-        <p>업무 우선 순위 : {selectedTask.priority}</p>
-        <p>공개 범위 : {selectedTask.visibility}</p>
-        <p>결재 : {selectedTask.status}</p>
-        <div
-            dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(selectedTask.description),
-            }}
-        />
+    return (
+    <div className="task-selected-container">
+        <div className="task-selected-title">
+            <span className="title-text">{selectedTask.title}</span>
+            <div className="task-badges">
+                <span className={`task-badge priority-${selectedTask.priority}`}>{selectedTask.priority}</span>
+                <span className={`task-badge visibility-${selectedTask.visibility}`}>{selectedTask.visibility}</span>
+                <span className={`task-badge status-${selectedTask.status}`}>{selectedTask.status}</span>
+                </div>
+            </div>
+
+            <div className="task-selected-info">
+                <span className="task-selected-label">작성자:</span> {selectedTask.createdBy?.name}
+            </div>
+            <div className="task-selected-info">
+                <span className="task-selected-label">작성부서:</span> {selectedTask.ownerDepartmentId?.name}
+            </div>
+            <div className="task-selected-info">
+                <span className="task-selected-label">담당자:</span> {selectedTask.assigneeId?.name}
+            </div>
+            <div className="task-selected-info">
+                <span className="task-selected-label">담당/처리 부서:</span> {selectedTask.workDepartmentId?.name}
+            </div>
+            <div className="task-selected-info">
+                <span className="task-selected-label">작성일:</span> {selectedTask.createdAt && new Date(selectedTask.createdAt).toLocaleString()}
+            </div>
+            <div className="task-selected-info">
+                <span className="task-selected-label">수정일:</span> {selectedTask.updatedAt && new Date(selectedTask.updatedAt).toLocaleString()}
+            </div>
+
+            <div
+                className="task-selected-description"
+                dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(selectedTask.description),
+                }}
+            />
         </div>
-    )
+    );
 }

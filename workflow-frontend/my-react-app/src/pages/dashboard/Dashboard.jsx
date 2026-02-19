@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { api } from "../api/api.js";
+import "../css/Dashboard.css"
 
 export default function Dashboard() {
 
@@ -8,23 +9,62 @@ export default function Dashboard() {
   const [counts, setCounts] = useState({})
   const { accessToken } = useAuth();
 
-// accessToken 값이 바뀔때 마다 안에 있는 코드를 실행하라. 
-useEffect(() => {
-  console.log("Dashboard accessToken =", accessToken);
-  if (!accessToken) return; // 로그인 전엔 호출 X
+// // accessToken 값이 바뀔때 마다 안에 있는 코드를 실행하라. 
+// useEffect(() => {
+//   console.log("Dashboard accessToken =", accessToken);
+//   if (!accessToken) return; // 로그인 전엔 호출 X
 
-  // 겟 포스트 구분
-  api.get("/api/kpi")
-  // 요청 성공하면 200(ok) 실행
-    .then((res) => setCounts(res.data))
-    // 실패하면 에러 표시
-    // ex) 토큰 만료 401, 서버 오류 500, 네트워크 오류 등
-    .catch((e) => console.error("KPI 불러오기 실패", e));
+//   // 겟 포스트 구분
+//   api.get("/api/kpi")
+//   // 요청 성공하면 200(ok) 실행
+//     // .then((res) => setCounts(res.data))
+//     // 실패하면 에러 표시
+//     // ex) 토큰 만료 401, 서버 오류 500, 네트워크 오류 등
+//     .catch((e) => console.error("KPI 불러오기 실패", e));
+// }, [accessToken]);
+
+
+// useEffect(() => {
+//   if (!accessToken) return;
+//   const fetchKpi = async (type = "created") => {
+//     try{
+//       const res = await api.get(`/api/kpi?type=${type}`)
+//       setCounts(0);
+//       setCounts(res.data); 
+//     }catch(e){
+//       console.log(e);
+//     }
+//   };
+//   fetchKpi();
+// }, [accessToken]);
+
+
+const fetchKpi = async (type = "created") => {
+  console.log(type);
+  try {
+    const res = await api.get(`/api/kpi?type=${type}`);
+    setCounts(res.data);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+useEffect(() => {
+  if (!accessToken) return;
+
+    const fetchKpiActive = async () => {
+      await fetchKpi(); // 초기 호출, type 기본값 사용
+    };
+  fetchKpiActive();
 }, [accessToken]);
 
   return (
     <div className="dashboardGrid">
       {/* KPI Cards */}
+      <div className="taskBtns">
+        <button className="taskBtn" onClick={() => fetchKpi("created")}>내가 만든 업무</button>
+        <button className="taskBtn" onClick={() => fetchKpi("assignee")}>담당 업무</button>
+      </div>
       <section className="kpiRow">
         {kpis.map((k) => (
           <div key={k} className="card">

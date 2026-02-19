@@ -4,15 +4,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.workflow.department.dto.DepartmentDTO;
+import com.workflow.tasks.enums.Priority;
 import com.workflow.tasks.enums.Status;
 import com.workflow.tasks.enums.Visibility;
 import com.workflow.user.dto.UserDTO;
 
 public record TaskDTO(
+		Long id,
         String title,
         String description,
         Status status,
-        String priority,
+        Priority priority,
         Visibility visibility,
         LocalDate dueDate,
         String holdReason,

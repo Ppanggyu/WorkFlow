@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.workflow.tasks.dto.TaskCreateRequestDTO;
+import com.workflow.tasks.dto.TaskDTO;
 import com.workflow.tasks.dto.TaskPageAndFilter;
 import com.workflow.tasks.dto.TasksResponse;
 import com.workflow.tasks.enums.Status;
@@ -38,11 +39,6 @@ public class TaskController {
 
 	@PostMapping("/tasks")
 	public ResponseEntity<TasksResponse> tasks(@AuthenticationPrincipal User user, @RequestBody TaskPageAndFilter paging) {
-
-		System.out.println("@RequestBody TaskPage paging.page : " + paging.page());
-		System.out.println("@RequestBody TaskPage paging.size : " + paging.size());
-		System.out.println("filter : " + paging.filter());
-		System.out.println("status : " + paging.status());
 		
 		Pageable pageable = PageRequest.of(paging.page(), paging.size(), Sort.by("updatedAt").descending());
 
@@ -50,11 +46,22 @@ public class TaskController {
 		
 		Status selecteStatus = paging.status();
 
-		Page<TasksView> list = taskService.tasks(userId, paging.filter(), pageable, selecteStatus);
+		Page<TaskDTO> list = taskService.tasks(userId, paging.filter(), pageable, selecteStatus);
+		
+		System.out.println("paging : " + paging.page());
+		System.out.println("paging : " + paging.size());
+		
 		List<String> status = Arrays.stream(Status.values())
 				.map(Enum::name).toList();
+		
+	    TasksResponse response = new TasksResponse(
+	            list.getContent(),        // 실제 데이터 리스트
+	            status,                   // 전체 status
+	            list.getTotalPages(),     // 총 페이지 수
+	            list.getTotalElements()   // 전체 항목 수
+	        );
 
-		return ResponseEntity.ok(new TasksResponse(list, status));
+		return ResponseEntity.ok(response);
 	}
 
 	@PostMapping("/taskForm")
@@ -71,8 +78,6 @@ public class TaskController {
 	public ResponseEntity<?> taskSelected(@RequestParam("taskId") Long taskId) {
 		
 		System.out.println("@RequestParam int taskId : " + taskId);
-		
-//		Long taskId1 = Long.parseLong((String) taskId.get("taskId"));
 		
 		TasksView selected = taskService.taskSelected(taskId);
 		

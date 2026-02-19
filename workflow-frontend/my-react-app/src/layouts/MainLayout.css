@@ -1,10 +1,11 @@
 /* 대쉬보드 전체 사이즈 조절 */
 .appShell {
   min-height: 100vh;
-  min-width: 100vw;
+  width: 99vw;          /* 100vw → 100% */
   display: flex;
   background: #f6f7fb;
 }
+
 
 /* 사이드바 조절 */
 .sidebar {

@@ -26,12 +26,12 @@ export default function Tasks(){
   useEffect(() => {
   const fetchTasks = async () => {
     try{
-      console.log("실행");
       const res = await api.post("/api/tasks",
         {page, size:9, filter:taskFilter, status:statusFilter});
-      setTasks(res.data.tasks.content);
+      setTasks(res.data.tasks);
       setTotalPages(res.data.totalPages);
       setAllStatus(["ALL", ...res.data.status]);
+      console.log(res.data);
     } catch (error) {
       console.error("tasks 페이지 : " + error);
     }
@@ -53,13 +53,18 @@ export default function Tasks(){
 
   return(
     <div className="tasks-container">
-      <h2>{user?.name}님의 tasks</h2>
+      <div className='tasks-header'>
+        <h2>{user?.name}님의 tasks</h2>
+        <NavLink to="/taskForm" className="task-link">
+          글작성
+        </NavLink>
+      </div>
 
-      <button value="all" onClick={tasksHandle}>전체 업무</button>
-      <button value="company" onClick={tasksHandle}>전사 업무</button>
-      <button value="myDepartment" onClick={tasksHandle}>우리 팀 업무</button>
-      <button value="create" onClick={tasksHandle}>내가 만든 업무</button>
-      <button value="assignee" onClick={tasksHandle}>담당 업무</button>
+      <button className='tasksHandleBtns' value="all" onClick={tasksHandle}>전체 업무</button>
+      <button className='tasksHandleBtns' value="company" onClick={tasksHandle}>전사 업무</button>
+      <button className='tasksHandleBtns' value="myDepartment" onClick={tasksHandle}>우리 팀 업무</button>
+      <button className='tasksHandleBtns' value="create" onClick={tasksHandle}>내가 만든 업무</button>
+      <button className='tasksHandleBtns' value="assignee" onClick={tasksHandle}>담당 업무</button>
 
       <div className='dropdown'>
         <div className="dropdown-header" onClick={() => setOpenDropdown(openDropdown === "status" ? null : "status")}>
@@ -82,9 +87,13 @@ export default function Tasks(){
          {tasks.map((tasks, i) => (
            <div key={`${i}`} className="task-card">
               <div onClick={() => selectTask(tasks.id)}>
-              <div className="task-title">{tasks.title || "제목 없음"}</div>
-              <div className="task-info">결재상태: <span className={`task-status status-${tasks.status}`}>{tasks.status}</span></div>
-              <div className="task-info">우선순위: {tasks.priority}</div>
+              <div className="task-title-wrapper">
+                <div className="task-title">{tasks.title || "제목 없음"}</div>
+                <div className="task-labels">
+                  <span className={`task-status status-${tasks.status}`}>{tasks.status}</span>
+                  <span className={`task-priority priority-${tasks.priority}`}>{tasks.priority}</span>
+                </div>
+              </div>
               <div className="task-info">작성자: {tasks.createdBy.name}</div>
               <div className="task-info">담당자: {tasks.assigneeId.name}</div>
               <div className="task-info">작성부서: {tasks.ownerDepartmentId.name}</div>
@@ -95,17 +104,13 @@ export default function Tasks(){
           </div>
         ))}
       </div>
-      <div>
+      <div className='pages'>
         {Array.from({length: totalPages}).map((_,idx) =>
-        <button key={idx} disabled={idx === page} onClick={() => setPage(idx)}>
+        <button key={idx} disabled={idx === page} onClick={() => setPage(idx)} className='pageBtn'>
           {idx + 1}
         </button>
         )}
       </div>
-
-      <NavLink to="/taskForm" className="task-link">
-        글작성
-      </NavLink>
     </div>
   )
 }

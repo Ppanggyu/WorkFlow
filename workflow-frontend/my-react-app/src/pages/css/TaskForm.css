@@ -1,49 +1,144 @@
-.dropdown, .dropdown1 {
-  width: 200px;
-  position: relative;
-  font-family: sans-serif;
+/* 전체 컨테이너 여백과 폰트 */
+.taskFrom-div {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
 }
 
-.dropdown-header, .dropdown-header1 {
-  padding: 10px;
-  border: 1px solid #ccc;
-  background: white;
-  cursor: pointer;
+/* 제목 input */
+.taskForm-title {
+    width: 50%;
+    padding: 10px 15px;
+    font-size: 18px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.taskForm-title:focus {
+    border-color: #007BFF;
+}
+
+/* 드롭다운 공통 */
+.taskForm-dropdown {
+    position: relative;
+    width: 200px;
+    user-select: none;
+}
+
+.taskForm-dropdown-header {
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.taskForm-dropdown-header:hover {
+    border-color: #007BFF;
+}
+
+.arrow {
+    margin-left: 10px;
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+
+.arrow.open {
+    transform: rotate(180deg);
+}
+
+/* 드롭다운 리스트 */
+.taskForm-dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    z-index: 10;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.taskForm-dropdown-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.taskForm-dropdown-item:hover {
+    background-color: #f0f8ff;
+}
+
+/* 날짜 input */
+.taskForm-date {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    font-size: 15px;
+    padding: 10px 15px;
+    position: relative;
+    width: 200px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.date:focus {
+    border-color: #007BFF;
+}
+
+/* Quill 에디터 */
+.ql-container {
+    min-height: 250px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.ql-toolbar {
+    border-radius: 6px 6px 0 0;
+    border: 1px solid #ccc;
+    border-bottom: none;
+}
+
+.ql-editor {
+    border-radius: 0 0 6px 6px;
+}
+
+.taskForm-titleAndButton{
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  margin-bottom: 20px;
 }
 
-.dropdown-header:hover, .dropdown-header:hover1 {
-  background: #f5f5f5;
+.taskForm-button {
+    padding: 10px 25px;
+    background-color: #007BFF;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
-.arrow, .arrow1 {
-  transition: transform 0.2s ease;
-  font-size: 12px;
+.taskForm-button:hover {
+    background-color: #0056b3;
 }
 
-.arrow.open, .arrow.open1 {
-  transform: rotate(180deg);
-}
-
-.dropdown-list, .dropdown-list1 {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border: 1px solid #ccc;
-  border-top: none;
-  position: absolute;
-  width: 100%;
-  background: white;
-  z-index: 1000;
-}
-
-.dropdown-item, .dropdown-item1 {
-  padding: 10px;
-  cursor: pointer;
-}
-
-.dropdown-item:hover, .dropdown-item:hover1 {
-  background: #f0f0f0;
+.taskForm-dropdowns{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
 }

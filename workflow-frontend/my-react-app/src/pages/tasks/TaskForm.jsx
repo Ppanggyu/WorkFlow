@@ -24,6 +24,15 @@ export default function TaskInput() {
   const [priorityOpt, setPriorityOpt] = useState(''); // 우선순위
   const [visibilityOpt, setVisibilityOpt] = useState(''); // 공개범위
 
+  // status 확인하기 위한 설정(기본값 TODO)
+  // const statusOpt = ["TODO",
+	// "IN_PROGRESS",
+	// "REVIEW",
+	// "DONE",
+	// "CANCELED",
+	// "ON_HOLD"]
+  // const [status, setStatus] = useState('');
+
   const uuid = crypto.randomUUID();
 
   const today = new Date();
@@ -49,7 +58,7 @@ export default function TaskInput() {
       }
       try {
       await api.post("/api/taskForm",
-        { title, description, priority, dueDate, visibility, assigneeId, tempImages });
+        { title, description, priority, dueDate, visibility, assigneeId, tempImages/*, status*/ }); // status 확인하기 위한 설정(기본값 TODO)
       navigate("/tasks");
     } catch (err) {
       console.error(err);
@@ -135,6 +144,7 @@ export default function TaskInput() {
           [{ header: [1, 2, 3, false] }],
           ['bold', 'italic', 'underline', 'strike', 'blockquote'],
           ['image'],
+          [{'fileUp': 'fileUpload'}]
         ],
         handlers: {
           image: imageHandler,
@@ -145,69 +155,93 @@ export default function TaskInput() {
   }, []);
 
   return (
-    <div>
-      <input type="text" value={title} onChange={(e) => setTitle(e.target.value) } placeholder="제목" />
-      <div className='dropdown'>
-        <div className="dropdown-header" onClick={() => setOpenDropdown(openDropdown === "priority" ? null : "priority")}>
-          {priority}
-          <span className={`arrow ${openDropdown === "priority" ? "open" : ""}`}>▼</span>
-        </div>
-         {openDropdown === "priority" && (
-        <ul className="dropdown-list">
-          {priorityOpt.map((item) => (
-          <li key={item} className="dropdown-item" onClick={() => {
-          setPriority(item); setOpenDropdown(null);}}>
-            {item}
-          </li>
-          ))}
-        </ul>
-      )}
+    <div className='taskFrom-div'>
+      <div className='taskForm-titleAndButton'>
+        <input className='taskForm-title' type="text" value={title} onChange={(e) => setTitle(e.target.value) } placeholder="제목" />
+        <button className='taskForm-button' onClick={ formHandle }>저장</button>
       </div>
-
-      <div className='dropdown'>
-        <div className="dropdown-header" onClick={() => setOpenDropdown(openDropdown === "visibility" ? null : "visibility")}>
-          {visibility}
-          <span className={`arrow ${openDropdown === "visibility" ? "open" : ""}`}>▼</span>
+      <div className='taskForm-dropdowns'>
+        <div className='taskForm-dropdown'>
+          <div className="taskForm-dropdown-header" onClick={() => setOpenDropdown(openDropdown === "priority" ? null : "priority")}>
+            {priority}
+            <span className={`arrow ${openDropdown === "priority" ? "open" : ""}`}>▼</span>
+          </div>
+          {openDropdown === "priority" && (
+          <ul className="taskForm-dropdown-list">
+            {priorityOpt.map((item) => (
+            <li key={item} className="taskForm-dropdown-item" onClick={() => {
+            setPriority(item); setOpenDropdown(null);}}>
+              {item}
+            </li>
+            ))}
+          </ul>
+        )}
         </div>
-         {openDropdown === "visibility" && (
-        <ul className="dropdown-list">
-          {visibilityOpt.map((item) => (
-          <li key={item} className="dropdown-item" onClick={() => {
-          setVisibility(item); setOpenDropdown(null);}}>
-            {item}
-          </li>
-          ))}
-        </ul>
-      )}
-      </div>
 
-      <div className='dropdown'>
-        <div className="dropdown-header" onClick={() => setOpenDropdown(openDropdown === "assignee" ? null : "assignee")}>
-          {assignee}
-          <span className={`arrow ${openDropdown === "assignee" ? "open" : ""}`}>▼</span>
+        <div className='taskForm-dropdown'>
+          <div className="taskForm-dropdown-header" onClick={() => setOpenDropdown(openDropdown === "visibility" ? null : "visibility")}>
+            {visibility}
+            <span className={`arrow ${openDropdown === "visibility" ? "open" : ""}`}>▼</span>
+          </div>
+          {openDropdown === "visibility" && (
+          <ul className="taskForm-dropdown-list">
+            {visibilityOpt.map((item) => (
+            <li key={item} className="taskForm-dropdown-item" onClick={() => {
+            setVisibility(item); setOpenDropdown(null);}}>
+              {item}
+            </li>
+            ))}
+          </ul>
+        )}
         </div>
-         {openDropdown === "assignee" && (
-        <ul className="dropdown-list">
-          {assigneeOpt.map((item) => (
-          <li key={item.id} className="dropdown-item" onClick={() => {
-          setAssigneeId(item.id);setAssignee(`${item.name} (${item.departmentName})`); setOpenDropdown(null);}}>
-            {item.name} ({item.departmentName})
-          </li>
-          ))}
-        </ul>
-      )}
-      </div>
 
+        <div className='taskForm-dropdown'>
+          <div className="taskForm-dropdown-header" onClick={() => setOpenDropdown(openDropdown === "assignee" ? null : "assignee")}>
+            {assignee}
+            <span className={`arrow ${openDropdown === "assignee" ? "open" : ""}`}>▼</span>
+          </div>
+          {openDropdown === "assignee" && (
+          <ul className="taskForm-dropdown-list">
+            {assigneeOpt.map((item) => (
+            <li key={item.id} className="taskForm-dropdown-item" onClick={() => {
+            setAssigneeId(item.id);setAssignee(`${item.name} (${item.departmentName})`); setOpenDropdown(null);}}>
+              {item.name} ({item.departmentName})
+            </li>
+            ))}
+          </ul>
+        )}
+        </div>
 
-
-      <input type="date" value = {selectedDate || ""}
+        {/* status 확인하기 위한 설정(기본값 TODO) */}
+        {/* <div className='dropdown'>
+          <div className="dropdown-header" onClick={() => setOpenDropdown(openDropdown === "status" ? null : "status")}>
+          {status}
+          <span className={`arrow ${openDropdown === "status" ? "open" : ""}`}>▼</span>
+          </div>
+          {openDropdown === "status" && (
+            <ul className="dropdown-list">
+            {statusOpt.map((item) => (
+              <li key={item.id} className="dropdown-item" onClick={() => {
+                setStatus(item); setOpenDropdown(null);}}>
+                {item}
+                </li>
+                ))}
+                </ul>
+                )}
+                </div> */}
+        <input className='taskForm-date' type="date" value = {selectedDate || ""}
           min={formatDate(today)} max={formatDate(maxDate)}
           onChange={(e) => {setSelectedDate(e.target.value);}}
           onKeyDown={(e) => e.preventDefault()}></input>
+      </div>
+
+      <div className='taskForm-fileUpBtnDIV'>
+        <button type="file">파일첨부</button>
+      </div>
+
 
         
       <ReactQuill ref={quillRef} theme="snow" value={description} onChange={deleteImageHanlder} modules={modules} />
-      <button className='button' onClick={ formHandle }>저장</button>
     </div>
   );
 }

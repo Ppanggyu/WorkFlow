@@ -1,0 +1,25 @@
+.taskBtns{
+    display: flex;
+    gap: 10px;
+}
+
+.taskBtn{
+    margin: 0 10px 10px 0;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background-color: #4a90e2;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.taskBtn:hover {
+  background-color: #357abd;
+}
+
+.taskBtn:disabled {
+  background-color: #999;
+  cursor: default;
+}
