@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from "../api/api";
 import DOMPurify from "dompurify";
-import "../css/taskSelected.css"
+import "../css/TaskSelected.css"
 
 export default function TaskSelected() {
 
