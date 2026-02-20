@@ -19,6 +19,8 @@ export default function TaskInput() {
   const [assigneeOpt, setAssigneeOpt] = useState([]);
   const [assigneeId, setAssigneeId] = useState('');
   const [tempImages, setTempImages] = useState([]);
+  const [tempFiles, setTempFiles] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const quillRef = useRef(null);
 
   const [priorityOpt, setPriorityOpt] = useState(''); // 우선순위
@@ -33,7 +35,7 @@ export default function TaskInput() {
 	// "ON_HOLD"]
   // const [status, setStatus] = useState('');
 
-  const uuid = crypto.randomUUID();
+  const [uuid] = useState(() => crypto.randomUUID());
 
   const today = new Date();
   const maxDate = new Date();
@@ -56,9 +58,14 @@ export default function TaskInput() {
         alert("담당자를 선택해 주세요.")
         return;
       }
+      // const formData = new FormData();
+      // for(const file of selectedFiles){
+      //   formData.append('file', file);
+      // }
       try {
       await api.post("/api/taskForm",
-        { title, description, priority, dueDate, visibility, assigneeId, tempImages/*, status*/ }); // status 확인하기 위한 설정(기본값 TODO)
+        { title, description, priority, dueDate, visibility, assigneeId, tempImages, tempFiles/*, status*/ }); // status 확인하기 위한 설정(기본값 TODO)
+      // await api.post("/api/attachmentsSave", formData);
       navigate("/tasks");
     } catch (err) {
       console.error(err);
@@ -87,30 +94,44 @@ export default function TaskInput() {
     input.setAttribute('type', 'file');
     input.setAttribute('accept', 
       '.jpg,.jpeg,.png,.gif,.webp');
+    input.setAttribute("multiple", true);
     input.click();
 
     input.onchange = async() => {
-      const file = input.files[0];
+      const files = Array.from(input.files);
+
       const formData = new FormData();
-      formData.append('file', file);
       formData.append("uuid", uuid);
+      for(const file of files){
+        formData.append('file', file);
+      }
 
       try{
         const res = await api.post("/api/imageUpload", formData);
-        const fullUrl = res.data.imageURL;
 
         const quill = quillRef.current.getEditor(); // Quill 에디터 인스턴스 가져오기
         const range = quill.getSelection(true); // 현재 커서 위치, true = 에디터에 강제로 포커스 주는거
+        let cursorIndex = range.index;
 
-        quill.insertEmbed(range.index, "image", fullUrl); // 현재 커서위치에 이미지 삽입
-        quill.setSelection(range.index + 1); // 이미지 삽입 후 커서 이미지 앞으로
-
-        // new URL().pathname -> URL 지우고 뒤에만 남김
-        setTempImages(prev => [...prev, {url: fullUrl, path: new URL(fullUrl).pathname}]);
+        for(const file of res.data){
+          quill.insertEmbed(range.index, "image", file.url); // 현재 커서위치에 이미지 삽입
+          cursorIndex += 1;
+          
+          // new URL().pathname -> URL 지우고 뒤에만 남김
+          setTempImages(prev => [...prev, {url: file.url, path: new URL(file.url).pathname, originalFileName: file.originalFileName}]);
+          console.log(tempImages);
+        }
+        quill.setSelection(cursorIndex); // 이미지 삽입 후 커서 이미지 앞으로
       }catch(e){
         alert(e.response.data.message);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
       }};}, [uuid]);
   
+useEffect(() => {
+  console.log(selectedFiles);
+  console.log(tempFiles);
+}, [selectedFiles, tempFiles])
+
   // 이미지 삭제
   function deleteImageHanlder(content, delta, source, editor) {
     setDescription(content);
@@ -136,6 +157,44 @@ export default function TaskInput() {
     }
   };
 
+  const inputFile = async (item) => {
+    item.preventDefault(); // submit 시 새로고침 막음
+    // e.persist(); // SyntheticEvent를 비동기로 쓸 때 필요했음 - 17버전 이상부터는 안써도 됨
+    if(!item.target.value) return;
+
+    const files = Array.from(item.target.files);
+    setSelectedFiles((prev) => [...prev, ...files]);
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("file", file);
+    })
+    formData.append("uuid", uuid);
+    try{
+      const res = await api.post("/api/fileUpload", formData);
+      
+      for(const file of res.data){
+      setTempFiles(prev => [...prev, {url: file.url, path: new URL(file.url).pathname, originalFileName: file.originalFileName}]);
+      }
+      console.log(tempFiles);
+    }catch(e){
+      console.log(e);
+    }
+  }
+
+  const deleteFile = async (deleteItem) => {
+
+    const deleted = tempFiles.find(file => file.originalFileName === deleteItem.name);
+    setTempFiles(prev => prev.filter(file => file.originalFileName !== deleteItem.name));
+    setSelectedFiles(prev => prev.filter(file => file.name !== deleteItem.name));
+
+    try{
+      api.post("/api/deleteFile", deleted);
+    }catch(e){
+      console.log(e);
+    }
+  }
+
   // quill 세팅
   const modules = useMemo(() => { // useMemo없으면 매 랜더링마다 modules가 다시 생성
     return {
@@ -143,8 +202,7 @@ export default function TaskInput() {
         container: [
           [{ header: [1, 2, 3, false] }],
           ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-          ['image'],
-          [{'fileUp': 'fileUpload'}]
+          ['image']
         ],
         handlers: {
           image: imageHandler,
@@ -235,8 +293,18 @@ export default function TaskInput() {
           onKeyDown={(e) => e.preventDefault()}></input>
       </div>
 
+      {selectedFiles.length === 0 ? (
+        <p>파일첨부가능</p>
+      ) : (
+        selectedFiles.map((file, index) => (
+          <div key={index}>
+              <p>{file.name}</p><button onClick={(() => deleteFile(file))}>X</button>
+          </div>
+        ))
+      )}
+
       <div className='taskForm-fileUpBtnDIV'>
-        <button type="file">파일첨부</button>
+        <input type='file' multiple id="taskForm-inputFile" onChange={inputFile}></input>
       </div>
 
 

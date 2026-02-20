@@ -1,12 +1,17 @@
 package com.workflow.tasks.service;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -18,13 +23,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.workflow.attachments.dto.TempFileDTO;
+import com.workflow.attachments.entity.AttachmentsEntity;
+import com.workflow.attachments.repository.AttachmentsRepository;
+import com.workflow.attachments.service.AttachmentsService;
 import com.workflow.common.exception.ApiException;
 import com.workflow.common.exception.UnauthorizedException;
 import com.workflow.department.dto.DepartmentDTO;
 import com.workflow.department.entity.DepartmentEntity;
 import com.workflow.tasks.dto.TaskCreateRequestDTO;
 import com.workflow.tasks.dto.TaskDTO;
-import com.workflow.tasks.dto.TempImageDTO;
+import com.workflow.tasks.dto.TaskFilesDTO;
 import com.workflow.tasks.entity.TasksEntity;
 import com.workflow.tasks.enums.Status;
 import com.workflow.tasks.enums.Visibility;
@@ -45,21 +54,24 @@ public class TaskService {
 
 	private final TaskRepository taskRepository;
 	private final UserRepository userRepository;
+	private final AttachmentsRepository attachmentsRepository;
+	private final AttachmentsService attachmentsService;
 	private final String WIN_TEMP_DIR = "C:/WorkFlow/";
-	
+
 	@Transactional(readOnly = true)
 	public Page<TaskDTO> tasks(Long id, String filter, Pageable pageable, Status selecteStatus) {
 		UserEntity user = userRepository.findById(id).orElseThrow(() -> new UnauthorizedException("오류"));
-		
+
 		Specification<TasksEntity> spec = Specification.allOf(isNotDeleted());
-		
+
 		if (filter != null) {
 			switch (filter) {
 			case "company":
 				spec = spec.and((root, query, cb) -> cb.equal(root.get("visibility"), Visibility.PUBLIC));
 				break;
 			case "myDepartment":
-				spec = spec.and((root, query, cb) -> cb.equal(root.get("workDepartmentId").get("id"), user.getDepartmentId().getId()));
+				spec = spec.and((root, query, cb) -> cb.equal(root.get("workDepartmentId").get("id"),
+						user.getDepartmentId().getId()));
 				break;
 			case "create":
 				spec = spec.and((root, query, cb) -> cb.equal(root.get("createdBy").get("id"), id));
@@ -67,13 +79,13 @@ public class TaskService {
 			case "assignee":
 				spec = spec.and((root, query, cb) -> cb.equal(root.get("assigneeId").get("id"), id));
 				break;
-			}			
+			}
 		}
 
 		if (selecteStatus != null) {
 			spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), selecteStatus));
 		}
-		
+
 		Page<TasksEntity> entityPage = taskRepository.findAll(spec, pageable);
 
 		return entityPage.map(this::toDto);
@@ -105,23 +117,56 @@ public class TaskService {
 		// 2. saveAndFlush + save 쓰면 id를 즉시 DB에서 보장받지만 대량 처리시 부하 증가
 		taskRepository.save(task);
 		Long newTaskId = task.getId();
-		String updatedDescription;
+		String updatedDescription = task.getDescription();
 
-		if (!taskCreateRequestDTO.tempImages().isEmpty()) {
-			
-			moveTempImages(taskCreateRequestDTO.tempImages(), newTaskId);
-			
-			Path tempFilePath = Paths.get(taskCreateRequestDTO.tempImages().get(0).path()); // temp/uuid폴더/uuid파일
-			
-			String uuidFolderName = tempFilePath.getParent().getFileName().toString(); // uuid폴더
-			
-			updatedDescription = task.getDescription().replace("/temp/" + uuidFolderName, "/" + newTaskId);
-			
+		if (!taskCreateRequestDTO.tempImages().isEmpty() || !taskCreateRequestDTO.tempFiles().isEmpty()) {
+
+			moveTempImages(taskCreateRequestDTO, newTaskId);
+
+			if (!taskCreateRequestDTO.tempFiles().isEmpty()) {
+				List<AttachmentsEntity> listEntity = new ArrayList<>();
+				for (TempFileDTO tempFile : taskCreateRequestDTO.tempFiles()) {
+					try {
+						Path tempFilePath = Paths.get(tempFile.path()); // 전체경로
+						String uuidFileEncodingName = tempFilePath.getFileName().toString(); // 파일명
+						String uuidFileName = URLDecoder.decode(uuidFileEncodingName, StandardCharsets.UTF_8);
+						String orginalFileName = uuidFileName.contains("_")
+								? uuidFileName.substring(uuidFileName.indexOf("_") + 1)
+								: uuidFileName;
+						Long a = (long) 10;
+						
+						Path storagePath = Paths.get(WIN_TEMP_DIR, String.valueOf(newTaskId), "file");
+						Path movePath = Paths.get(WIN_TEMP_DIR, String.valueOf(newTaskId), "file", uuidFileName);
+						long fileSize = Files.size(movePath);
+						System.out.println("movePath : " + movePath);
+						System.out.println("fileSize : " + fileSize);
+						// 첨부파일 파일이 newTaskId에 맞게 이동안함
+
+						AttachmentsEntity entity = AttachmentsEntity.builder().taskId(task).uploaderId(creator)
+								.originalFilename(orginalFileName).storedFilename(uuidFileName)
+								.contentType(Files.probeContentType(tempFilePath).toString())
+								.sizeBytes(a).storagePath(storagePath.toString()).isDeleted(false)
+								.build();
+
+						listEntity.add(entity);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				attachmentsRepository.saveAll(listEntity);
+			}
+
+			if (!taskCreateRequestDTO.tempImages().isEmpty()) {
+				Path tempFilePath = Paths.get(taskCreateRequestDTO.tempImages().get(0).path()); // temp/uuid폴더/uuid파일
+				String uuidFolderName = tempFilePath.getParent().getFileName().toString(); // uuid폴더
+				updatedDescription = task.getDescription().replace("/temp/" + uuidFolderName, "/" + newTaskId); // 앞에
+																												// 자르고
+																												// 뒤에 붙임
+																												// (폴더명)
+			}
 			task.setDescription(updatedDescription);
-			
 			taskRepository.save(task);
 		}
-
 	}
 
 	public TasksView taskSelected(Long taskId) {
@@ -130,52 +175,78 @@ public class TaskService {
 	}
 
 	// 이미지 업로드
-	public String imageUpload(MultipartFile file, String uuid, HttpServletRequest req) {
+	public Map<String, Object> imageUpload(List<MultipartFile> file, String uuid, HttpServletRequest req) {
 
 		if (file.isEmpty()) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "UPLOAD_FILE_EMPTY", "업로드할 파일이 없습니다.");
 		}
 
-		String originalFileName = file.getOriginalFilename();
-		String extension = originalFileName.substring(originalFileName.lastIndexOf(".")).toLowerCase(); // 대문자 -> 소문자
-		System.out.println("originalFileName : " + originalFileName);
-		System.out.println("extension : " + extension);
+		List<TaskFilesDTO> taskFiles = new ArrayList<TaskFilesDTO>();
 
-		Set<String> allowExtensions = Set.of(".gif", ".jpg", ".png", ".jpeg", "webp");
-		if (!allowExtensions.contains(extension)) {
-			throw new ApiException(HttpStatus.BAD_REQUEST, "UPLOAD_FILE_EXTENSION",
-					"잘못된 파일 입니다. 사용가능 확장자 : .gif .jpg .png. jpeg");
-		}
+		for (MultipartFile mf : file) {
 
-		Path uploadPath = null;
-		Path targetPath = null;
-		String imageURL = null;
-		try {
+			String stringUrl = String.valueOf(req.getRequestURL());
+			String lastUrl = stringUrl.substring(stringUrl.lastIndexOf("/"));
+			String originalFileName = mf.getOriginalFilename();
+			System.out.println("originalFileName : " + originalFileName);
+			String extension = originalFileName.substring(originalFileName.lastIndexOf(".")).toLowerCase(); // 대문자 ->
+																											// 소문자
 
-			UUID fileUUID = UUID.randomUUID();
-			uploadPath = Paths.get(WIN_TEMP_DIR + "/temp/", uuid);
-			Files.createDirectories(uploadPath);
-
-			String savedFileName = fileUUID + extension;
-			targetPath = uploadPath.resolve(savedFileName);
-
-			file.transferTo(targetPath.toFile()); // 저장
-
-			// replace
-			// -> http://localhost:8081/workflow/api/upload 에서 /workflow/api/upload 지움
-			imageURL = req.getRequestURL().toString().replace(req.getRequestURI(), "") + "/temp/" + uuid + "/"
-					+ savedFileName; // http://localhost:8081/temp/폴더명/파일명
-
-		} catch (IOException e) {
-			try {
-				Files.deleteIfExists(targetPath); // 파일 삭제
-			} catch (IOException e1) {
-				throw new ApiException(HttpStatus.BAD_REQUEST, "UPLOAD_DELETE_EXCEPTION", "업로드 실패 : 삭제 실패");
+			if (!lastUrl.equals("/fileUpload")) {
+				Set<String> allowExtensions = Set.of(".gif", ".jpg", ".png", ".jpeg", "webp");
+				if (!allowExtensions.contains(extension)) {
+					throw new ApiException(HttpStatus.BAD_REQUEST, "UPLOAD_FILE_EXTENSION",
+							"잘못된 파일 입니다. 사용가능 확장자 : .gif .jpg .png. jpeg");
+				}
 			}
-			throw new ApiException(HttpStatus.BAD_REQUEST, "UPLOAD_EXCEPTION", "업로드 실패");
-		}
 
-		return imageURL;
+			Path uploadPath = null;
+			Path targetPath = null;
+			String imageURL = null;
+			try {
+
+				UUID fileUUID = UUID.randomUUID();
+				if (lastUrl.equals("/fileUpload")) {
+					uploadPath = Paths.get(WIN_TEMP_DIR, "temp", uuid, "file");
+				} else {
+					uploadPath = Paths.get(WIN_TEMP_DIR, "temp", uuid);
+				}
+				Files.createDirectories(uploadPath);
+				String savedFileName = fileUUID + extension;
+				String savedFileName2 = fileUUID + "_" + originalFileName;
+
+				// replace
+				// -> http://localhost:8081/workflow/api/upload 에서 /workflow/api/upload 지움
+				if (lastUrl.equals("/fileUpload")) {
+					targetPath = uploadPath.resolve(savedFileName2);
+					mf.transferTo(targetPath.toFile()); // 저장
+
+					imageURL = req.getRequestURL().toString().replace(req.getRequestURI(), "") + "/temp/" + uuid
+							+ "/file/" + savedFileName2; // http://localhost:8081/temp/폴더명/file/파일명
+				} else {
+					targetPath = uploadPath.resolve(savedFileName);
+					mf.transferTo(targetPath.toFile()); // 저장
+
+					imageURL = req.getRequestURL().toString().replace(req.getRequestURI(), "") + "/temp/" + uuid + "/"
+							+ savedFileName; // http://localhost:8081/temp/폴더명/uuid_originalFileName
+				}
+
+			} catch (IOException e) {
+				try {
+					Files.deleteIfExists(targetPath); // 파일 삭제
+				} catch (IOException e1) {
+					throw new ApiException(HttpStatus.BAD_REQUEST, "UPLOAD_DELETE_EXCEPTION", "업로드 실패 : 삭제 실패");
+				}
+				throw new ApiException(HttpStatus.BAD_REQUEST, "UPLOAD_EXCEPTION", "업로드 실패");
+			}
+
+			taskFiles.add(new TaskFilesDTO(imageURL, originalFileName));
+		}
+		Map<String, Object> maps = new HashMap<>();
+		maps.put("taskFiles", taskFiles);
+		maps.put("multipartFile", file);
+
+		return maps;
 	}
 
 	// 이미지 삭제
@@ -193,28 +264,42 @@ public class TaskService {
 	}
 
 	// 임시저장 파일 이동
-	public void moveTempImages(List<TempImageDTO> tempImages, Long newTaskId) {
-
-		Path tempFilePath = Paths.get(tempImages.get(0).path()); // temp/uuid폴더/uuid파일
+	public void moveTempImages(TaskCreateRequestDTO taskCreateRequestDTO, Long newTaskId) {
+		Path tempFilePath;
+		if (!taskCreateRequestDTO.tempImages().isEmpty()) {
+			tempFilePath = Paths.get(taskCreateRequestDTO.tempImages().get(0).path()); // temp/uuid폴더/uuid파일
+		} else {
+			tempFilePath = Paths.get(taskCreateRequestDTO.tempFiles().get(0).path()); // temp/uuid폴더/file/uuid파일
+		}
 
 		String uuidFolderName = tempFilePath.getParent().toString(); // temp/uuid폴더
 
 		Path tempPath = Paths.get(WIN_TEMP_DIR, "temp"); // C:\WorkFlow\temp
 		Path taskFolder = Paths.get(WIN_TEMP_DIR, newTaskId.toString()); // C:/WorkFlow/게시글번호
+		Path taskFileFolder = Paths.get(WIN_TEMP_DIR, newTaskId.toString(), "file"); // C:/WorkFlow/게시글번호/file
 		Path tempFolder = Paths.get(WIN_TEMP_DIR, uuidFolderName); // C:/WorkFlow/temp/uuid폴더
+		Path tempFileFolder = Paths.get(WIN_TEMP_DIR, uuidFolderName, "file"); // C:/WorkFlow/temp/uuid폴더/file
 
 		if (Files.exists(tempPath) && Files.isDirectory(tempPath)) {
 			if (taskFolder.isAbsolute()) {
 				try {
-					Files.createDirectories(taskFolder); // 게시글 번호에 맞는 파일 생성
+					Files.createDirectories(taskFolder); // 게시글 번호에 맞는 폴더 생성
+					Files.createDirectories(taskFileFolder); // 게시글번호 폴더안에 file 폴더 생성
 				} catch (IOException e) {
 					System.out.println("신규 파일 생성 실패");
 				}
 			}
 			try (DirectoryStream<Path> stream = Files.newDirectoryStream(tempFolder)) {
-				for (Path file : stream) {
-					Path targetPath = taskFolder.resolve(file.getFileName()); // 파일 옮길 폴더 위치
-					Files.move(file, targetPath, StandardCopyOption.REPLACE_EXISTING); // 옮기기
+				if (!taskCreateRequestDTO.tempImages().isEmpty()) {
+					for (Path file : stream) {
+						Path targetPath = taskFolder.resolve(file.getFileName()); // 파일 옮길 폴더 위치
+						Files.move(file, targetPath, StandardCopyOption.REPLACE_EXISTING); // 옮기기
+					}
+				} else {
+					for (Path file : stream) {
+						Path targetPath = tempFileFolder.resolve(file.getFileName()); // 파일 옮길 폴더 위치
+						Files.move(file, targetPath, StandardCopyOption.REPLACE_EXISTING); // 옮기기
+					}
 				}
 				Files.deleteIfExists(tempFolder); // temp에 남은 폴더 삭제
 			} catch (IOException e) {
@@ -223,55 +308,35 @@ public class TaskService {
 		}
 
 	}
-	
+
 	private Specification<TasksEntity> isNotDeleted() {
-	    return (root, query, cb) ->
-	            cb.isFalse(root.get("isDeleted"));
+		return (root, query, cb) -> cb.isFalse(root.get("isDeleted"));
 	}
-	
+
 	private TaskDTO toDto(TasksEntity entity) {
-	    return new TaskDTO(
-	            entity.getId(),
-	            entity.getTitle(),
-	            entity.getDescription(),
-	            entity.getStatus(),
-	            entity.getPriority(),
-	            entity.getVisibility(),
-	            entity.getDueDate(),
-	            entity.getHoldReason(),
-	            entity.getCancelReason(),
-	            entity.getIsDeleted(),
+		return new TaskDTO(entity.getId(), entity.getTitle(), entity.getDescription(), entity.getStatus(),
+				entity.getPriority(), entity.getVisibility(), entity.getDueDate(), entity.getHoldReason(),
+				entity.getCancelReason(), entity.getIsDeleted(),
 
-	            toUserDto(entity.getCreatedBy()),
-	            toUserDto(entity.getAssigneeId()),
-	            toDepartmentDto(entity.getOwnerDepartmentId()),
-	            toDepartmentDto(entity.getWorkDepartmentId()),
+				toUserDto(entity.getCreatedBy()), toUserDto(entity.getAssigneeId()),
+				toDepartmentDto(entity.getOwnerDepartmentId()), toDepartmentDto(entity.getWorkDepartmentId()),
 
-	            entity.getCreatedAt(),
-	            entity.getUpdatedAt()
-	    );
+				entity.getCreatedAt(), entity.getUpdatedAt());
 	}
-	
+
 	private UserDTO toUserDto(UserEntity user) {
-	    if (user == null) return null;
+		if (user == null)
+			return null;
 
-	    return new UserDTO(
-	            user.getId(),
-	            user.getEmail(),
-	            user.getName(),
-	            user.getPosition(),
-	            user.getRole(),
-	            user.getStatus()
-	    );
+		return new UserDTO(user.getId(), user.getEmail(), user.getName(), user.getPosition(), user.getRole(),
+				user.getStatus());
 	}
-	
-	private DepartmentDTO toDepartmentDto(DepartmentEntity dept) {
-	    if (dept == null) return null;
 
-	    return new DepartmentDTO(
-	            dept.getId(),
-	            dept.getName()
-	    );
+	private DepartmentDTO toDepartmentDto(DepartmentEntity dept) {
+		if (dept == null)
+			return null;
+
+		return new DepartmentDTO(dept.getId(), dept.getName());
 	}
 
 }

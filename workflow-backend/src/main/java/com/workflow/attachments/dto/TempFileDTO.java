@@ -1,6 +1,6 @@
-package com.workflow.tasks.dto;
+package com.workflow.attachments.dto;
 
-public record TempImageDTO(
+public record TempFileDTO(
 		String url,
 		String path,
 		String originalFileName

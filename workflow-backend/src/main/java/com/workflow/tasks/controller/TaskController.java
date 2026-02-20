@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.workflow.tasks.dto.TaskCreateRequestDTO;
 import com.workflow.tasks.dto.TaskDTO;
+import com.workflow.tasks.dto.TaskFilesDTO;
 import com.workflow.tasks.dto.TaskPageAndFilter;
 import com.workflow.tasks.dto.TasksResponse;
 import com.workflow.tasks.enums.Status;
@@ -77,25 +78,46 @@ public class TaskController {
 	@GetMapping("/taskSelected")
 	public ResponseEntity<?> taskSelected(@RequestParam("taskId") Long taskId) {
 		
-		System.out.println("@RequestParam int taskId : " + taskId);
-		
 		TasksView selected = taskService.taskSelected(taskId);
 		
 		return ResponseEntity.ok(selected);
 	}
 
 	@PostMapping("/imageUpload")
-	public ResponseEntity<?> imageUpload(@RequestParam("file") MultipartFile file, @RequestParam("uuid") String uuid, HttpServletRequest req) {
+	public ResponseEntity<?> imageUpload(@RequestParam("file") List<MultipartFile> file, @RequestParam("uuid") String uuid, HttpServletRequest req) {
 
-		String imageURL = taskService.imageUpload(file, uuid, req);
+		Map<String, Object> maps = taskService.imageUpload(file, uuid, req);
+		List<TaskFilesDTO> image = (List<TaskFilesDTO>) maps.get("taskFiles");
 		
-		return ResponseEntity.ok(Map.of("imageURL", imageURL));
+		return ResponseEntity.ok(image);
 	}
 	
 	@PostMapping("/deleteImage")
 	public void deleteImage(@RequestBody Map<String, String> reqPath) {
 
 		String path = reqPath.get("path");
+		taskService.deleteImage(path);
+
+	}
+	
+	@PostMapping("/fileUpload")
+	public ResponseEntity<?> fileUpload(@RequestParam("file") List<MultipartFile> file, @RequestParam("uuid") String uuid, HttpServletRequest req) {
+		
+		for(int i = 0; i < file.size(); i++) {
+			System.out.println(file.get(i).getOriginalFilename());
+		}
+		
+		Map<String, Object> maps = taskService.imageUpload(file, uuid, req);
+		List<TaskFilesDTO> file1 = (List<TaskFilesDTO>) maps.get("taskFiles");
+		
+		return ResponseEntity.ok(file1);
+	}
+	
+	@PostMapping("/deleteFile")
+	public void deleteFile(@RequestBody Map<String, String> reqPath) {
+		
+		String path = reqPath.get("path");
+		
 		taskService.deleteImage(path);
 
 	}
