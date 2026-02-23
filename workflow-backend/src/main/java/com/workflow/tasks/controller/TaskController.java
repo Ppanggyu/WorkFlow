@@ -19,10 +19,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.workflow.attachments.entity.AttachmentsEntity;
 import com.workflow.tasks.dto.TaskCreateRequestDTO;
 import com.workflow.tasks.dto.TaskDTO;
 import com.workflow.tasks.dto.TaskFilesDTO;
 import com.workflow.tasks.dto.TaskPageAndFilter;
+import com.workflow.tasks.dto.TaskSelectedRes;
 import com.workflow.tasks.dto.TasksResponse;
 import com.workflow.tasks.enums.Status;
 import com.workflow.tasks.service.TaskService;
@@ -78,9 +80,9 @@ public class TaskController {
 	@GetMapping("/taskSelected")
 	public ResponseEntity<?> taskSelected(@RequestParam("taskId") Long taskId) {
 		
-		TasksView selected = taskService.taskSelected(taskId);
+		TaskSelectedRes seletedRes = taskService.taskSelected(taskId);
 		
-		return ResponseEntity.ok(selected);
+		return ResponseEntity.ok(seletedRes);
 	}
 
 	@PostMapping("/imageUpload")

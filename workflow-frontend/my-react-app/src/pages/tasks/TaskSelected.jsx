@@ -8,19 +8,32 @@ export default function TaskSelected() {
 
     const { taskId } = useParams();
     const [selectedTask, setSelectedTask] = useState(null);
+    const [attachments, setAttachments] = useState([]);
 
     useEffect(() => {
         const fetchTasks = async () => {
             try{
                 const res = await api.get("/api/taskSelected", {params:{taskId}});
-                setSelectedTask(res.data);
-                console.log(res.data.updateAt);
+                setSelectedTask(res.data.task);
+                setAttachments(res.data.taskAtList);
                 console.log(res.data);
             } catch(error){
                 console.log(error);
             }
         }; fetchTasks();
     }, [taskId]);
+
+    const downloadHandle = async (item) =>{
+        const res = await api.get(`/api/${selectedTask.id}/file/${item.id}`, {responseType: "blob"})
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", item.originalFilename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    }
 
     // 랜더링 순서 
     // 1. const {taskId} = useParams(); 부분 const들 랜더링(컴포넌트 함수 실행)
@@ -58,6 +71,20 @@ export default function TaskSelected() {
             </div>
             <div className="task-selected-info">
                 <span className="task-selected-label">수정일:</span> {selectedTask.updatedAt && new Date(selectedTask.updatedAt).toLocaleString()}
+            </div>
+
+            <div className="task-selected-info">
+                <span className="task-selected-label">첨부 파일:</span>
+                {attachments.length === 0 ? (
+                    <div className="task-noFile">파일이 존재하지 않습니다.</div>
+                ) :
+                <div className='task-selected-content'>
+                    {attachments.map((item) => (
+                    <div key={`${item.id}`} className="task-selected-card" onClick={() => downloadHandle(item)}>
+                        {item.originalFilename}
+                        <span className='task-selected-fileSize'> {item.formatFileSize}</span>
+                    </div>))}
+                </div>}
             </div>
 
             <div

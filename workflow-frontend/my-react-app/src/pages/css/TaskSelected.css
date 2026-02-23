@@ -79,12 +79,15 @@
   line-height: 1.5;
   padding-bottom: 4px;
   border-bottom: 1px solid #eee;
+
+  flex-wrap: wrap; /* ⭐ 핵심 */
 }
 
 /* 레이블 */
 .task-selected-label {
   font-weight: bold;
-  min-width: 130px;
+  width: 130px;       /* ⭐ 고정폭 */
+  flex-shrink: 0;      /* ⭐ 줄어들지 않게 */
 }
 
 /* description HTML */
@@ -95,6 +98,41 @@
   border-radius: 8px;
   line-height: 1.6;
   color: #444;
+}
+
+.task-selected-fileSize{
+  font-size: 12px;
+  color: #95a5a6;
+}
+
+.task-selected-card {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.task-selected-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+.task-card {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.task-selected-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
 }
 
 /* 모바일 반응형 */

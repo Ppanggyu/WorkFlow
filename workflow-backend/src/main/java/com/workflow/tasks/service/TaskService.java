@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.workflow.attachments.dto.AttachmentsDTO;
 import com.workflow.attachments.dto.TempFileDTO;
 import com.workflow.attachments.entity.AttachmentsEntity;
 import com.workflow.attachments.repository.AttachmentsRepository;
@@ -34,6 +35,7 @@ import com.workflow.department.entity.DepartmentEntity;
 import com.workflow.tasks.dto.TaskCreateRequestDTO;
 import com.workflow.tasks.dto.TaskDTO;
 import com.workflow.tasks.dto.TaskFilesDTO;
+import com.workflow.tasks.dto.TaskSelectedRes;
 import com.workflow.tasks.entity.TasksEntity;
 import com.workflow.tasks.enums.Status;
 import com.workflow.tasks.enums.Visibility;
@@ -133,7 +135,6 @@ public class TaskService {
 						String orginalFileName = uuidFileName.contains("_")
 								? uuidFileName.substring(uuidFileName.indexOf("_") + 1)
 								: uuidFileName;
-						Long a = (long) 10;
 						
 						Path storagePath = Paths.get(WIN_TEMP_DIR, String.valueOf(newTaskId), "file");
 						Path movePath = Paths.get(WIN_TEMP_DIR, String.valueOf(newTaskId), "file", uuidFileName);
@@ -142,10 +143,11 @@ public class TaskService {
 						System.out.println("fileSize : " + fileSize);
 						// 첨부파일 파일이 newTaskId에 맞게 이동안함
 
+						Long a = (long) 10;
 						AttachmentsEntity entity = AttachmentsEntity.builder().taskId(task).uploaderId(creator)
 								.originalFilename(orginalFileName).storedFilename(uuidFileName)
 								.contentType(Files.probeContentType(tempFilePath).toString())
-								.sizeBytes(a).storagePath(storagePath.toString()).isDeleted(false)
+								.sizeBytes(fileSize).storagePath(storagePath.toString()).isDeleted(false)
 								.build();
 
 						listEntity.add(entity);
@@ -169,9 +171,16 @@ public class TaskService {
 		}
 	}
 
-	public TasksView taskSelected(Long taskId) {
+	public TaskSelectedRes taskSelected(Long taskId) {
+
 		TasksView selected = taskRepository.findProjectedById(taskId).orElseThrow(() -> new RuntimeException("없음"));
-		return selected;
+		
+		List<AttachmentsDTO> selectedAtt = attachmentsRepository.findByTaskId_Id(selected.getId())
+				.stream().map(entity -> AttachmentsDTO.from(entity)).toList();
+		
+		TaskSelectedRes seletedRes = new TaskSelectedRes(selected, selectedAtt);
+
+		return seletedRes;
 	}
 
 	// 이미지 업로드
@@ -297,7 +306,7 @@ public class TaskService {
 					}
 				} else {
 					for (Path file : stream) {
-						Path targetPath = tempFileFolder.resolve(file.getFileName()); // 파일 옮길 폴더 위치
+						Path targetPath = taskFileFolder.resolve(file.getFileName()); // 파일 옮길 폴더 위치
 						Files.move(file, targetPath, StandardCopyOption.REPLACE_EXISTING); // 옮기기
 					}
 				}
