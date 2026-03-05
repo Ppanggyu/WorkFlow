@@ -1,11 +1,9 @@
 package com.workflow.department.controller;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,11 +21,11 @@ public class DepartmentController {
 	
 	private final DepartmentService departmentService;
 	
+	// task 작성 페이지 우선순위, 공개범위, 담당자
 	@PostMapping("/allDepartment")
 	public ResponseEntity<?> allDepartment(@AuthenticationPrincipal User user){
 		
-		Collection<GrantedAuthority> role = user.getAuthorities();
-		Map<String, List<?>> allList = departmentService.allDepartment(role);
+		Map<String, List<?>> allList = departmentService.allDepartment(user);
 		
 		return ResponseEntity.ok(allList);
 	}

@@ -39,16 +39,20 @@ public class AttachmentsService {
 		}
 		
 		Path path = Paths.get(WIN_TEMP_DIR, taskId.toString(), "file", file.getStoredFilename());
-
+		
+		// 파일 경로 URL Resource로 변경
 		Resource resource = new UrlResource(path.toUri());
 
 		if (!resource.exists()) {
 			throw new RuntimeException("파일이 존재하지 않습니다.");
 		}
-
+		
+		// 파일명 한글일 시 깨짐 방지
 		String encodedFilename = URLEncoder.encode(file.getOriginalFilename(), StandardCharsets.UTF_8).replace("+",
 				"%20");
-
+		
+		// contentType : 파일 타입
+		// header : 다운로드 설정 / attachment : 다운로드 실행, filename : 다운로드 시 파일명 설정
 		return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType()))
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFilename)
 				.body(resource);

@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.workflow.attachments.entity.AttachmentsEntity;
 import com.workflow.tasks.dto.TaskCreateRequestDTO;
 import com.workflow.tasks.dto.TaskDTO;
 import com.workflow.tasks.dto.TaskFilesDTO;
@@ -28,7 +27,6 @@ import com.workflow.tasks.dto.TaskSelectedRes;
 import com.workflow.tasks.dto.TasksResponse;
 import com.workflow.tasks.enums.Status;
 import com.workflow.tasks.service.TaskService;
-import com.workflow.tasks.view.TasksView;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +41,7 @@ public class TaskController {
 	@PostMapping("/tasks")
 	public ResponseEntity<TasksResponse> tasks(@AuthenticationPrincipal User user, @RequestBody TaskPageAndFilter paging) {
 		
+		// 페이징 설정 : 수정날짜 기준 정렬
 		Pageable pageable = PageRequest.of(paging.page(), paging.size(), Sort.by("updatedAt").descending());
 
 		Long userId = Long.parseLong(user.getUsername());
@@ -50,9 +49,6 @@ public class TaskController {
 		Status selecteStatus = paging.status();
 
 		Page<TaskDTO> list = taskService.tasks(userId, paging.filter(), pageable, selecteStatus);
-		
-		System.out.println("paging : " + paging.page());
-		System.out.println("paging : " + paging.size());
 		
 		List<String> status = Arrays.stream(Status.values())
 				.map(Enum::name).toList();
@@ -88,7 +84,7 @@ public class TaskController {
 	@PostMapping("/imageUpload")
 	public ResponseEntity<?> imageUpload(@RequestParam("file") List<MultipartFile> file, @RequestParam("uuid") String uuid, HttpServletRequest req) {
 
-		Map<String, Object> maps = taskService.imageUpload(file, uuid, req);
+		Map<String, Object> maps = taskService.fileUpload(file, uuid, req);
 		List<TaskFilesDTO> image = (List<TaskFilesDTO>) maps.get("taskFiles");
 		
 		return ResponseEntity.ok(image);
@@ -98,18 +94,15 @@ public class TaskController {
 	public void deleteImage(@RequestBody Map<String, String> reqPath) {
 
 		String path = reqPath.get("path");
-		taskService.deleteImage(path);
+		taskService.fileDelete(path);
 
 	}
 	
 	@PostMapping("/fileUpload")
-	public ResponseEntity<?> fileUpload(@RequestParam("file") List<MultipartFile> file, @RequestParam("uuid") String uuid, HttpServletRequest req) {
+	public ResponseEntity<?> fileUpload(@RequestParam("file") List<MultipartFile> file, 
+			@RequestParam("uuid") String uuid, HttpServletRequest req) {
 		
-		for(int i = 0; i < file.size(); i++) {
-			System.out.println(file.get(i).getOriginalFilename());
-		}
-		
-		Map<String, Object> maps = taskService.imageUpload(file, uuid, req);
+		Map<String, Object> maps = taskService.fileUpload(file, uuid, req);
 		List<TaskFilesDTO> file1 = (List<TaskFilesDTO>) maps.get("taskFiles");
 		
 		return ResponseEntity.ok(file1);
@@ -120,7 +113,7 @@ public class TaskController {
 		
 		String path = reqPath.get("path");
 		
-		taskService.deleteImage(path);
+		taskService.fileDelete(path);
 
 	}
 

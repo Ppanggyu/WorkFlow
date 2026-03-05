@@ -3,10 +3,9 @@ package com.workflow.tasks.dto;
 import java.util.List;
 
 import com.workflow.attachments.dto.AttachmentsDTO;
-import com.workflow.tasks.view.TasksView;
 
 public record TaskSelectedRes(
-		TasksView task,
+		TaskDTO task,
 		List<AttachmentsDTO> taskAtList
 		) {
 

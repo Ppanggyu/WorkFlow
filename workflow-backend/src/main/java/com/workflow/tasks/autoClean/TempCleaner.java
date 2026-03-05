@@ -16,12 +16,13 @@ public class TempCleaner {
 	
 	private final String WIN_TEMP_DIR = "C:/WorkFlow/";
 	
-	@Scheduled(fixedRate = 12 * 60 * 60 * 1000) // ms 단위
+	// 자동 삭제 시간 설정
+	@Scheduled(fixedRate = 12 * 60 * 60 * 1000) // ms 단위12 * 60 * 60 * 1000
 	public void cleanOldFiles() {
 		
 		Path path = Paths.get(WIN_TEMP_DIR, "temp");
 		
-		Instant cutOff = Instant.now().minusSeconds(12 * 60 * 60); // 초 단위
+		Instant cutOff = Instant.now().minusSeconds(12 * 60 * 60); // 초 단위12 * 60 * 60
 		
 		if (!Files.exists(path) || !Files.isDirectory(path)) {
 			System.out.println("temp가 없음");

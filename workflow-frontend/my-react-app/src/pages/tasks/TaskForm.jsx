@@ -26,15 +26,6 @@ export default function TaskInput() {
   const [priorityOpt, setPriorityOpt] = useState(''); // 우선순위
   const [visibilityOpt, setVisibilityOpt] = useState(''); // 공개범위
 
-  // status 확인하기 위한 설정(기본값 TODO)
-  // const statusOpt = ["TODO",
-	// "IN_PROGRESS",
-	// "REVIEW",
-	// "DONE",
-	// "CANCELED",
-	// "ON_HOLD"]
-  // const [status, setStatus] = useState('');
-
   const [uuid] = useState(() => crypto.randomUUID());
 
   const today = new Date();
