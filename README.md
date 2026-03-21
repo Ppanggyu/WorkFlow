@@ -106,6 +106,18 @@
   - 부서별 필터 가능
 
 ---
+## 🏗️ 아키텍처
+
+- Layered Architecture (Controller / Service / Repository)
+- DTO 분리 (Request / Response)
+- Entity 직접 노출 방지
+- 공통 응답 구조 (ApiResponse)
+- 예외 처리 (GlobalExceptionHandler)
+
+### 인증 구조
+- JWT + Spring Security Filter 체인
+- Access / Refresh Token 분리 전략
+---
 
 ## 🚧 진행 중 기능
 
