@@ -1,16 +1,20 @@
-package com.workflow.tasks.repasitory;
+package com.workflow.tasks.repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.workflow.tasks.entity.TaskEntity;
 import com.workflow.tasks.enums.TaskStatus;
+import com.workflow.user.entity.UserEntity;
 
 public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
 
@@ -163,4 +167,26 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
 												  @Param("userId") Long	userId,
 												  @Param("deptId") Long	deptId);
     // 특정 Task 상세 조회: 로그인 사용자가 접근 가능한 Task만, 작성자/담당자/공개/부서 포함
+	
+	Optional<TaskEntity> findByIdAndIsDeletedFalse(Long id);
+	
+	@Query("""
+	        select a
+	          from TaskEntity a
+	         where a.isDeleted = true
+	           and a.deletedAt is not null
+	           and a.deletedAt < :cutoff
+	         order by a.deletedAt asc
+	    """)
+	List<TaskEntity> findCleanupTargets(@Param("cutoff") LocalDateTime cutoff);
+	
+	@Modifying
+    @Query("""
+        delete from TaskEntity a
+         where a.id = :id
+    """)
+    int hardDeleteById(@Param("id") Long id);
+	
+	Page<TaskEntity> findByAssigneeIdAndIsDeletedFalse(Long userId, Pageable pageable);
+	Page<TaskEntity> findByCreatedByIdAndIsDeletedFalse(Long userId, Pageable pageable);
 }

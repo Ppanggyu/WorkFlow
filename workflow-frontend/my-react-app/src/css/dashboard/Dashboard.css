@@ -141,3 +141,69 @@
 .card.DONE { border-top: 3px solid #16a34a; }
 .card.ON_HOLD { border-top: 3px solid #7c3aed; }
 .card.CANCELED { border-top: 3px solid #dc2626; }
+
+.dashboard__task-table {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+.dashboard__task-table__header,
+.dashboard__task-table__row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 0.8fr 1fr 1.5fr 0.6fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.dashboard__task-table__header {
+  font-weight: 600;
+  border-bottom: 1px solid #e5e5e5;
+  color: #333;
+}
+
+.dashboard__task-table__row {
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.dashboard__task-table__row:hover {
+  cursor: pointer;
+  background: #f9fafb;
+}
+
+.dashboard__pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 15px;
+}
+
+.dashboard__pagination button {
+  min-width: 34px;
+  height: 34px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dashboard__pagination button.active {
+  border-color:#5b7cfa; background:#eef2ff; font-weight:700;
+}
+
+.dashboard__pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dashboard__task-table-rowData{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

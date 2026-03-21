@@ -20,6 +20,19 @@ export const STATUSES = [
   "CANCELED",    // 취소
 ];
 
+export const CHOICE_STATUS = {
+  TODO: ["TODO", "IN_PROGRESS", "REVIEW", "DONE", "ON_HOLD", "CANCELED"],
+  IN_PROGRESS: ["IN_PROGRESS", "REVIEW", "DONE", "ON_HOLD", "CANCELED"],
+  REVIEW: ["REVIEW", "DONE", "ON_HOLD", "CANCELED"],
+  DONE: ["DONE", "ON_HOLD", "CANCELED"],
+  ON_HOLD: ["IN_PROGRESS", "REVIEW", "DONE", "ON_HOLD", "CANCELED"],
+  CANCELED: ["IN_PROGRESS", "REVIEW", "DONE", "ON_HOLD", "CANCELED"]
+}
+
+export const GET_CHOICE_STATUS = (status) => {
+  return CHOICE_STATUS[status] ?? [];
+}
+
 // 우선순위 옵션
 export const PRIORITIES = [
   "LOW",    // 낮음

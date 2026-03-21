@@ -2,12 +2,15 @@ package com.workflow.user;
 
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.workflow.tasks.dto.TaskResponse;
 import com.workflow.tasks.service.TaskQueryService;
 
 import lombok.RequiredArgsConstructor;
@@ -34,4 +37,15 @@ public class DashboardController {
         return taskQueryService.kpi(Long.parseLong(principal.getUsername()));
         // 담당/작성별 업무 상태별 개수를 Map으로 반환
     }
+    
+    @GetMapping("/dashBoardTask")
+    public Page<TaskResponse> dashBoardTask(@AuthenticationPrincipal UserDetails principal,
+    		@RequestParam("scope") String scope,
+    		@RequestParam("page") int page, @RequestParam("size") int size){
+    	System.out.println("scope@@@@@@@@@@@@" + scope);
+    	Long userId = Long.parseLong(principal.getUsername());
+    	
+    	return taskQueryService.dashBoardTask(userId, page, size, scope);
+    }
+    
 }

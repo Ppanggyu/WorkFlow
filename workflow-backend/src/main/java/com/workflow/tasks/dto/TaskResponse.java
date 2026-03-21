@@ -3,6 +3,7 @@ package com.workflow.tasks.dto;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 import com.workflow.attachment.dto.AttachmentResponse;
 import com.workflow.department.entity.DepartmentEntity;
@@ -12,10 +13,14 @@ import com.workflow.tasks.enums.TaskStatus;
 import com.workflow.tasks.enums.TaskVisibility;
 import com.workflow.user.entity.UserEntity;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class TaskResponse {
 
@@ -27,6 +32,8 @@ public class TaskResponse {
     private TaskVisibility visibility;     // 공개 범위 (PUBLIC, DEPARTMENT, PRIVATE 등)
     private LocalDate dueDate;             // 마감일
     private LocalDateTime createdAt;       // 생성 시각
+    private LocalDateTime updatedAt;
+    private Long version;
 
     private Long createdById;              // 생성자 ID
     private String createdByName;          // 생성자 이름
@@ -82,6 +89,8 @@ public class TaskResponse {
                 .visibility(t.getVisibility())
                 .dueDate(t.getDueDate())
                 .createdAt(t.getCreatedAt())
+                .updatedAt(Objects.equals(t.getUpdatedAt(), t.getCreatedAt()) ? null : t.getUpdatedAt())
+                .version(t.getVersion())
 
                 .createdById(cb != null ? cb.getId() : null)
                 .createdByName(cb != null ? cb.getName() : null)

@@ -49,13 +49,23 @@ export default function TaskEditor({ value, onChange }) {
 
     const editor = quillRef.current?.getEditor();
     if (!editor) return;
-    const range = editor.getSelection();
+
+    let range = editor.getSelection();
+
+    // getSelection 없으면 강제로 줄 생성
+    if (!range) {
+      editor.insertText(0, "\n");
+      range = { index: 0, length: 0 };
+    }
+
     const index = range ? range.index : editor.getLength();
 
     // 초기 크기 지정 가능
     const value = { src: url, width: "640px", height: "360px" };
     editor.insertEmbed(index, "video", value, "user");
-    editor.setSelection(index + 1, 0);
+    // 줄 확보
+    editor.insertText(index + 1, "\n");
+    editor.setSelection(index + 2, 0);
   };
 
   const modules = useMemo(() => ({

@@ -1,9 +1,13 @@
 package com.workflow.tasks.controller;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.workflow.common.dto.PageResponse;
 import com.workflow.tasks.dto.TaskCreateRequest;
@@ -19,6 +24,7 @@ import com.workflow.tasks.enums.TaskStatus;
 import com.workflow.tasks.service.TaskCommandService;
 import com.workflow.tasks.service.TaskQueryService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -52,21 +58,58 @@ public class TaskController {
 	        @AuthenticationPrincipal UserDetails principal // 로그인 사용자 정보
 	) {
 	    if (principal == null) return ResponseEntity.status(401).build(); // 인증 안 됐으면 401
-
 	    Long userId = Long.parseLong(principal.getUsername()); // username에 id 들어있음
 	    return ResponseEntity.ok(taskCommandService.create(req, userId)); // 생성 후 DTO 반환
+	}
+	
+	// 업무 생성
+	@PostMapping("/update")
+	public ResponseEntity<TaskResponse> update(
+			@Valid @RequestBody TaskCreateRequest req, // 요청 DTO, 유효성 검증
+			@AuthenticationPrincipal UserDetails principal // 로그인 사용자 정보
+			) {
+		if (principal == null) return ResponseEntity.status(401).build(); // 인증 안 됐으면 401
+		Long userId = Long.parseLong(principal.getUsername()); // username에 id 들어있음
+		return ResponseEntity.ok(taskCommandService.update(req, userId)); // 생성 후 DTO 반환
 	}
 	
 	// 업무 상세 조회
 	@GetMapping("/{id}")
 	public TaskResponse detail(
 	        @PathVariable("id") Long id, // 조회할 업무 ID
-	        @AuthenticationPrincipal UserDetails principal // 로그인 사용자 정보
+	        @AuthenticationPrincipal UserDetails principal, // 로그인 사용자 정보
+	        HttpServletRequest req
 	) {
-		System.out.println(id); // 임시 디버그 출력, 실제 운영에서는 제거 권장
-
+		
 		Long userId = Long.parseLong(principal.getUsername()); // 사용자 ID
-	    return taskQueryService.detail(id, userId); // 서비스 호출 후 DTO 반환
+		String uri = req.getRequestURI();
+		boolean isEdit = uri.endsWith("/edit");
+	    return taskQueryService.detail(id, userId, isEdit); // 서비스 호출 후 DTO 반환
+	}
+	
+	// 업무 수정 페이지 데이터 출력
+	@GetMapping("/{id}/edit")
+	public TaskResponse update(
+			@PathVariable("id") Long id, // 조회할 업무 ID
+			@AuthenticationPrincipal UserDetails principal, // 로그인 사용자 정보
+			HttpServletRequest req
+			) {
+		
+		String uri = req.getRequestURI();
+		boolean isEdit = uri.endsWith("/edit");
+		Long userId = Long.parseLong(principal.getUsername()); // 사용자 ID
+		return taskQueryService.detail(id, userId, isEdit); // 서비스 호출 후 DTO 반환
+	}
+	
+	// 업무 논리 삭제
+	@DeleteMapping("/{id}")
+	public void delete(@PathVariable("id") Long id,
+			@AuthenticationPrincipal UserDetails principal,
+			@RequestBody String reason) {
+		
+		Long userId = Long.parseLong(principal.getUsername());
+		taskQueryService.delete(id, userId, reason);
+		
 	}
 
 }

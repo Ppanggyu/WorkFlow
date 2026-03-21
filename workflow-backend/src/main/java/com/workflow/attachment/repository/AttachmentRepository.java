@@ -2,13 +2,16 @@ package com.workflow.attachment.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.workflow.attachment.dto.AttachmentResponse;
 import com.workflow.attachment.entity.AttachmentEntity;
+import com.workflow.tasks.entity.TaskEntity;
 
 public interface AttachmentRepository extends JpaRepository<AttachmentEntity, Long> {
 
@@ -22,6 +25,8 @@ public interface AttachmentRepository extends JpaRepository<AttachmentEntity, Lo
     java.util.Optional<AttachmentEntity> findByIdAndIsDeletedFalse(Long id);
     // - ID 기준, soft delete 되지 않은 경우만 조회
     // - 권한 체크 후 다운로드/삭제 로직에서 사용
+    
+    List<AttachmentEntity> findByIdInAndIsDeletedFalse(List<Long> attachmentId);
 
     // 일정 기간 지난 soft-deleted 첨부 목록 조회
     @Query("""
@@ -59,4 +64,8 @@ public interface AttachmentRepository extends JpaRepository<AttachmentEntity, Lo
     long countActiveByTaskId(@Param("taskId") Long taskId);
     // - 업무 내 남아있는 첨부 파일 수 확인
     // - UI에서 파일 아이콘/카운트 표시 등에 사용
+
+	List<AttachmentEntity> findByTaskIdAndIsDeletedFalse(Long id);
+	
+	List<AttachmentEntity> findByTaskIdInAndIsDeletedTrue(List<Long> tasks);
 }

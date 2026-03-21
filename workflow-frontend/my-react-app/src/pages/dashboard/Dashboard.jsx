@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { api } from "../../api/api";
 import "../../css/dashboard/Dashboard.css";
+import { formatRelativeDateTime, ddayLabel } from "../../utils/dateUtils";
 
 export default function Dashboard() {
   const nav = useNavigate(); // 페이지 이동 훅
@@ -17,15 +18,55 @@ export default function Dashboard() {
   // 스코프 선택: assigned = 내 업무, created = 내가 만든 업무
   const [scope, setScope] = useState("assigned");
 
+  const [size] = useState(10);
+  const [taskData, setTaskData] = useState([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+
   // KPI 데이터 가져오기 (accessToken 있을 때만)
   useEffect(() => {
     if (!accessToken) return;
 
-    api
-      .get("/api/kpi") // 백엔드 KPI API 호출
-      .then((res) => setCounts(res.data)) // 응답 저장
-      .catch((e) => console.error("KPI 불러오기 실패", e));
-  }, [accessToken]);
+    const fetchData = async () => {
+      try{
+        const kpiRes = await api.get("/api/kpi") // 백엔드 KPI API 호출
+        setCounts(kpiRes.data);
+  
+        const res = await api.get("/api/dashBoardTask", {params : {
+          page,
+          size,
+          scope
+        }})
+        setTaskData(res.data.content);
+        setTotalPages(res.data.totalPages);
+        console.log(res.data.content);
+      }catch(error){
+        console.log(error);
+      }
+    };
+    fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken, page, scope]);
+
+  const handleScopeChange = (newScope) => {
+    setScope(newScope);
+    setPage(0);
+  };
+
+  const getPages = () => {
+    const max = 5;
+
+    let start = Math.max(0, page - 2);
+    let end = Math.min(totalPages - 1, start + max - 1);
+
+    if (end === totalPages - 1) {
+      start = Math.max(0, end - max + 1);
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
 
   // KPI 카드 클릭 시 Tasks 페이지로 이동 + 필터 전달
   const handleKpiClick = (status) => {
@@ -39,7 +80,7 @@ export default function Dashboard() {
       <div className="kpi__tabs">
         <button
           className={scope === "assigned" ? "active" : ""}
-          onClick={() => setScope("assigned")}
+          onClick={() => handleScopeChange("assigned")}
           type="button"
         >
           내 업무
@@ -47,7 +88,7 @@ export default function Dashboard() {
 
         <button
           className={scope === "created" ? "active" : ""}
-          onClick={() => setScope("created")}
+          onClick={() => handleScopeChange("created")}
           type="button"
         >
           내가 만든 업무
@@ -80,10 +121,95 @@ export default function Dashboard() {
         {/* 내 업무 테이블 카드 */}
         <div className="card card__tasks">
           <div className="card__title">My Tasks Table</div>
-          <div className="muted">
-            <p>My Tasks Table</p>
+
+          {taskData.length !== 0 ? 
+          <div className="dashboard__task-table">
+            {/* header */}
+            <div className="dashboard__task-table__header">
+              <div>제목</div>
+              <div>마감일</div>
+              <div>작성일</div>
+              <div>수정일</div>
+              <div>중요도</div>
+              <div>공개범위</div>
+              {scope === "created" ? <div>담당자</div> : <div>작성자</div>}
+              <div>첨부파일</div>
+            </div>
+
+            {/* body */}
+            <div className="dashboard__task-table__body">
+              {taskData.map((item) => (
+                <div className="dashboard__task-table__row" key={item.id} onClick={() => nav(`/tasks/${item.id}`)}>
+                  <div className="dashboard__task-table-rowData dashboard__task-table-title">{item.title}</div>
+                  <div className="dashboard__task-table-rowData dashboard__task-table-dueDate">{ddayLabel(item.dueDate)}</div>
+                  <div className="dashboard__task-table-rowData dashboard__task-table-createdAt">{formatRelativeDateTime(item.createdAt)}</div>
+                  <div className="dashboard__task-table-rowData dashboard__task-table-updatedAt">{formatRelativeDateTime(item.updatedAt)}</div>
+                  <div className="dashboard__task-table-rowData dashboard__task-table-priority">{item.priority}</div>
+                  <div className="dashboard__task-table-rowData dashboard__task-table-visibility">{item.visibility}</div>
+
+                  <div className="dashboard__task-table-rowData dashboard__task-table-name">
+                    {scope === "created"
+                      ? (item.assigneeName != null ? `${item.assigneeName} (${item.assigneeDepartmentCode})` : "-")
+                      : (item.createdByName != null ? `${item.createdByName} (${item.createdByDepartmentCode})` : "-")}
+                  </div>
+
+                  <div className="dashboard__task-table-rowData dashboard__task-table-attachmentsCount">{item.attachmentsCount}</div>
+                </div>
+              ))}
+            </div>
           </div>
+          : <div>업무가 없습니다.</div>}
+
+        {taskData.length !== 0 ? 
+        <div className="dashboard__pagination">
+            {/* first */}
+            <button
+              disabled={page === 0}
+              onClick={() => setPage(0)}
+            >
+              «
+            </button>
+
+            {/* prev */}
+            <button
+              disabled={page === 0}
+              onClick={() => setPage(page - 1)}
+            >
+              ‹
+            </button>
+
+            {/* pages */}
+            {getPages().map((p) => (
+              <button
+                key={p}
+                className={p === page ? "active" : ""}
+                onClick={() => setPage(p)}
+              >
+                {p + 1}
+              </button>
+            ))}
+
+            {/* next */}
+            <button
+              disabled={page === totalPages - 1}
+              onClick={() => setPage(page + 1)}
+            >
+              ›
+            </button>
+
+            {/* last */}
+            <button
+              disabled={page === totalPages - 1}
+              onClick={() => setPage(totalPages - 1)}
+            >
+              »
+            </button>
+
+          </div>
+        : <div></div> }
         </div>
+
+        
 
         {/* 활동 로그 카드 */}
         <div className="card card__activity">

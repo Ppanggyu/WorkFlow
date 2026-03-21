@@ -20,6 +20,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 			  select u
 			  from UserEntity u
 			  join fetch u.department
+			  where u.id > 0
 			""")
 	List<UserEntity> findAllWithDepartment();
 }

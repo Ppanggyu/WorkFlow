@@ -1,17 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api/api";
 import TaskEditor from "./TaskEditor";
 import "../../css/tasks/TaskForm.css";
+import { v4 as uuidv4 } from "uuid";
 
-import { PRIORITIES, STATUSES } from "../../constants/taskOptions";
+import { PRIORITIES, CHOICE_STATUS, GET_CHOICE_STATUS } from "../../constants/taskOptions";
 import AttachmentInput from "../attachments/AttachmentInput";
 import { uploadTaskAttachments } from "../../api/attachmentsApi";
+import AttachmentList from "../../components/attachments/AttachmentList";
 
 // TaskForm 컴포넌트
 // - 업무 생성 / 수정 폼
 // - 제목, 상태, 우선순위, 마감일, 담당자, 공개 범위, 내용, 첨부파일 포함
-export default function TaskForm({ mode = "create" }) {
+export default function TaskForm({ mode, taskId }) {
 
   const nav = useNavigate(); // 페이지 이동용
 
@@ -21,11 +23,19 @@ export default function TaskForm({ mode = "create" }) {
   const [status, setStatus] = useState("TODO");
   const [priority, setPriority] = useState("MEDIUM");
 
+  const [tasks, setTasks] = useState();
+  const [reason, setReason] = useState();
+  const groupUuid = uuidv4();
+  const [ attList, setAttList ] = useState([]);
+  const [ beforeStatus, setBeforeStatus ] = useState();
+  const [ version, setVersion ] = useState();
+
   const isEdit = mode === "edit";
 
   // 상태 옵션
   // - 생성 시 TODO만, 수정 시 전체 상태 허용
-  const statusOptions = isEdit ? STATUSES : ["TODO"];
+  const statusOptions = isEdit ? GET_CHOICE_STATUS(beforeStatus) : ["TODO"];
+  // const statusOptions = isEdit ? STATUSES : ["TODO"];
 
   // 기본 마감일: 오늘 +7일
   const defaultToday = () => {
@@ -82,8 +92,14 @@ export default function TaskForm({ mode = "create" }) {
     const msg = validateClient();
     if (msg) return alert(msg);
 
+    if(mode == "edit" && !reason){
+      alert("수정 사유를 입력해주세요.");
+      return;
+    }
+
     // payload 구성
     const payload = {
+      taskId: tasks ? tasks.id : null,
       title: title.trim(),
       description: description || null,
       status,
@@ -91,23 +107,58 @@ export default function TaskForm({ mode = "create" }) {
       visibility,
       dueDate: dueDate || null,
       assigneeId: assigneeId ? Number(assigneeId) : null,
+      reason: reason || null,
+      groupUuid: groupUuid || null,
+      beforeStatus: beforeStatus || null,
+      // version: version
+    };
+    const payload2 = {
+      taskId: tasks ? tasks.id : null,
+      title: title.trim(),
+      description: description || null,
+      status,
+      priority: priority || null,
+      visibility,
+      dueDate: dueDate || null,
+      assigneeId: assigneeId ? Number(assigneeId) : null,
+      reason: reason || null,
+      groupUuid: groupUuid || null,
+      beforeStatus: beforeStatus || null,
+      version: version
     };
 
     try {
       // 1) 업무 생성
-      const res = await api.post("/api/tasks/create", payload);
-
-      // 2) 첨부파일 업로드
-      const taskId = res.data?.id;
-      try {
-        if (taskId && attachFiles.length > 0) {
-          await uploadTaskAttachments(taskId, attachFiles);
-        }
-      } catch (e) {
-        console.error("첨부 업로드 실패", e);
-        alert(
+      if(!isEdit){
+        const res = await api.post("/api/tasks/create", payload);
+        
+        // 2) 첨부파일 업로드
+        const taskId = res.data?.id;
+        try {
+          if (taskId && attachFiles.length > 0) {
+            await uploadTaskAttachments(taskId, attachFiles, reason, groupUuid, isEdit);
+          }
+        } catch (e) {
+          console.error("첨부 업로드 실패", e);
+          alert(
           "업무는 저장됐지만 첨부 업로드에 실패했습니다. 상세에서 다시 올려주세요."
         );
+      }
+      }
+
+      if(isEdit){
+        await api.post("/api/tasks/update", payload2);
+      }
+
+      if(isEdit && (attList.length != 0)){
+        try{
+          await api.delete("/api/attachments/delete", 
+            {data : 
+              {attachment: attList, uuid: groupUuid, reason: reason}})
+        }catch(e){
+          alert(e);
+          console.log(e);
+        }
       }
 
       // 생성 완료 후 목록 페이지 이동
@@ -122,6 +173,65 @@ export default function TaskForm({ mode = "create" }) {
       alert(data?.message || "저장 실패 (콘솔 확인)");
     }
   };
+
+  // 수정 시 데이터 출력용
+  useEffect(() => {
+    if(!isEdit) return;
+    if(!taskId) return;
+    const fetchTask = async () => {
+      try{
+        setErrors({});
+        const res = await api.get(`/api/tasks/${taskId}/edit`);
+        setTasks(res.data);
+        setTitle(res.data.title);
+        setStatus(res.data.status);
+        setVisibility(res.data.visibility);
+        setDueDate(res.data.dueDate);
+        setAssigneeId(res.data.assigneeId);
+        setPriority(res.data.priority);
+        setDescription(res.data.description);
+        setBeforeStatus(res.data.status);
+        setVersion(res.data.version);
+        console.log(res.data.version);
+      } catch(error){
+        setErrors(error.response.data.message || error.message);
+      }
+    };
+    fetchTask();
+  }, [taskId, isEdit]);
+
+  // 첨부 목록 (백엔드가 task.attachments로 내려준다는 전제)
+    const attachments = useMemo(() => {
+      const arr = tasks?.attachments || [];
+      return Array.isArray(arr) ? arr : [];
+    }, [tasks?.attachments]);
+  
+    // 첨부 삭제 후 화면 즉시 반영
+    const onAttachmentDeleted = (deletedId) => {
+      setTasks((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        const list = Array.isArray(next.attachments) ? next.attachments : [];
+        next.attachments = list.filter((x) => x.id !== deletedId);
+        return next;
+      });
+    };
+
+    if (errors && Object.keys(errors).length > 0){
+      return (
+        <div className="taskdetail__state">
+          <div className="taskdetail__error">
+            {typeof errors === "string" ? errors : JSON.stringify(errors)}
+          </div>
+          <button
+            className="taskdetail__btn taskdetail__btn--ghost"
+            onClick={() => nav(-1)}
+          >
+            뒤로가기
+          </button>
+        </div>
+        );
+      };
 
   return (
     <div className="taskform__stack">
@@ -148,7 +258,7 @@ export default function TaskForm({ mode = "create" }) {
             <label className="taskform__label">상태</label>
             <select
               className="taskform__select"
-              value={status}
+              value={status || ""}
               onChange={(e) => setStatus(e.target.value)}
             >
               {statusOptions.map((s) => (
@@ -163,7 +273,7 @@ export default function TaskForm({ mode = "create" }) {
             <label className="taskform__label">우선순위</label>
             <select
               className="taskform__select"
-              value={priority}
+              value={priority || ""}
               onChange={(e) => setPriority(e.target.value)}
             >
               {PRIORITIES.map((p) => (
@@ -190,7 +300,7 @@ export default function TaskForm({ mode = "create" }) {
             <label className="taskform__label">담당자</label>
             <select
               className="taskform__select"
-              value={assigneeId}
+              value={assigneeId || ""}
               onChange={(e) => setAssigneeId(e.target.value)}
             >
               <option value="">미지정</option>
@@ -230,7 +340,14 @@ export default function TaskForm({ mode = "create" }) {
               </button>
             </div>
           </div>
-
+              {mode === "edit" && (
+              <div className="taskform__section">
+                <label className="taskform__label">수정 사유</label>
+                <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)} />
+              </div>
+            )}
         </div>
 
         {/* 업무 내용 */}
@@ -253,6 +370,9 @@ export default function TaskForm({ mode = "create" }) {
 
       </form>
 
+      {/* 첨부파일 (모듈 분리 컴포넌트) */}
+      <AttachmentList attachments={attachments} onDeleted={onAttachmentDeleted} setAttList={setAttList}/>
+
       {/* 첨부파일 입력 */}
       <AttachmentInput value={attachFiles} onChange={setAttachFiles} />
 
@@ -269,7 +389,7 @@ export default function TaskForm({ mode = "create" }) {
           </div>
         </div>
       )}
-
+    
     </div>
   );
 }

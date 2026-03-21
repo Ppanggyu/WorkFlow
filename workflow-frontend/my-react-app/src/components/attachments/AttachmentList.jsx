@@ -1,7 +1,8 @@
 import "../../css/tasks/TaskDetail.css";
 import { useMemo, useState } from "react";
 import { formatBytes } from "../../utils/fileUtils";
-import { downloadAttachment, deleteAttachment } from "../../api/attachmentsApi";
+import { downloadAttachment } from "../../api/attachmentsApi";
+import { useLocation } from "react-router-dom";
 
 // 파일 타입에 따른 아이콘 반환 함수
 // - 이미지, 문서, 압축, 텍스트 등 기본 매핑
@@ -30,7 +31,14 @@ const fileIcon = (name = "") => {
 export default function AttachmentList({
   attachments = [],
   onDeleted,
+  // attList,
+  setAttList
 }) {
+
+  // AttachmentList 사용하는 페이지 확인
+  const location = useLocation();
+  const editPage = location.pathname.includes("edit");
+
   // attachments가 배열이 아닐 경우 대비
   const list = useMemo(
     () => (Array.isArray(attachments) ? attachments : []),
@@ -58,7 +66,7 @@ export default function AttachmentList({
 
     try {
       setBusyId(att.id); // 삭제 중 표시
-      await deleteAttachment(att.id);
+      setAttList(prev => [...prev,att]);
       onDeleted?.(att.id); // 삭제 후 부모 콜백
     } catch (e) {
       // HTTP 상태 코드별 에러 메시지
@@ -74,12 +82,24 @@ export default function AttachmentList({
       setBusyId(null); // 처리 완료
     }
   };
+  // useEffect(() => {
+  //   console.log(attList);
+  // }, [attList]);
+  
+  // 수정페이지 인가? && 불러올게 없는가?
+  if(editPage && (list.length == 0)){
+    return null;
+  }
 
   return (
     <div className="taskdetail__attach">
       {/* 헤더: 제목 + 첨부 개수 */}
       <div className="taskdetail__attachHead">
+        {/* 수정 페이지 : 기존 첨부파일 / 상세 페이지 : 첨부 파일 구분용 */}
+        {editPage ? 
+        <div className="taskdetail__attachTitle">기존 첨부 파일</div> :
         <div className="taskdetail__attachTitle">첨부 파일</div>
+        }
         <div className="taskdetail__attachCount">{list.length}개</div>
       </div>
 
@@ -117,6 +137,8 @@ export default function AttachmentList({
                   다운로드
                 </button>
 
+              {/* 수정 페이지가 아닌 이상 안보이게 */}
+              {!editPage ? <div></div> : 
                 <button
                   type="button"
                   className="taskdetail__btn taskdetail__btn--danger"
@@ -125,6 +147,7 @@ export default function AttachmentList({
                 >
                   {busyId === att.id ? "삭제중..." : "삭제"}
                 </button>
+                }
               </div>
             </li>
           ))}

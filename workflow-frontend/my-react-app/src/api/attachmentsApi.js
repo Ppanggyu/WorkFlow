@@ -3,9 +3,12 @@ import { api } from "./api";
 // 첨부파일 업로드 (taskId에 귀속)
 // - files는 File 객체 배열
 // - FormData로 변환 후 multipart/form-data로 전송
-export async function uploadTaskAttachments(taskId, files) {
+export async function uploadTaskAttachments(taskId, files, reason, groupUuid, isEdit) {
   const formData = new FormData();
   for (const f of files) formData.append("files", f); // FormData에 파일 추가
+  formData.append("reason", reason ? reason : null)
+  formData.append("groupUuid", groupUuid ? groupUuid : null)
+  formData.append("isEdit", isEdit)
 
   const res = await api.post(`/api/tasks/${taskId}/attachments`, formData, {
     headers: { "Content-Type": "multipart/form-data" }, // 반드시 multipart/form-data
@@ -16,8 +19,9 @@ export async function uploadTaskAttachments(taskId, files) {
 
 // 첨부 삭제(soft delete)
 // - 실제 삭제 X, isDeleted=true 처리
-export async function deleteAttachment(attachmentId) {
-  return api.delete(`/api/attachments/${attachmentId}`);
+export async function deleteAttachment(attachment) {
+  return api.delete(`/api/attachments/delete`, 
+    {data : [attachment]});
 }
 
 // Content-Disposition에서 filename 파싱 (filename* 우선)

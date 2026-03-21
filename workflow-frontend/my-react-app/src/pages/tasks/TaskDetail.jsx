@@ -6,6 +6,11 @@ import { api } from "../../api/api.js";
 import { visibilityLabel } from "../../utils/taskUtils";
 import { formatRelativeDateTime, ddayLabel } from "../../utils/dateUtils";
 
+import { useAuth } from "../../auth/hooks/useAuth.js"
+import { userFromToken } from "../../auth/utils/userFromToken.js"
+import { userRole } from "../../auth/utils/userRole.js"
+import { auditLogtFieldnameLabel } from "../../utils/auditLogUitls.js"
+
 import ImageModal from "../../components/common/ImageModal";
 
 // 첨부 모듈 분리
@@ -19,6 +24,12 @@ export default function TaskDetail() {
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+
+  const {accessToken} = useAuth(); // JWT Decode용
+  const user = userFromToken(accessToken); // JWT Deocde
+  const role = userRole(user);
+  const [auditLog, setAuditLog] = useState([]);
+  const [expended, setExpended] = useState(false); // 더보기, 접기 용
 
   // 모달 기능
   const descRef = useRef(null);
@@ -112,16 +123,62 @@ export default function TaskDetail() {
     return Array.isArray(arr) ? arr : [];
   }, [task?.attachments]);
 
-  // 첨부 삭제 후 화면 즉시 반영
-  const onAttachmentDeleted = (deletedId) => {
-    setTask((prev) => {
-      if (!prev) return prev;
-      const next = { ...prev };
-      const list = Array.isArray(next.attachments) ? next.attachments : [];
-      next.attachments = list.filter((x) => x.id !== deletedId);
-      return next;
-    });
-  };
+  // 수정 내용 출력용
+  useEffect(() => {
+    const logFetch = async () => {
+      try{
+        const res = await api.get(`/api/auditLog/${id}`)
+        const grouped = Object.values(
+          // AuditLog DB에 추가한 updateGroupId 기준으로 배열 묶기
+          // 정렬은 Repository에서 OrderBy
+          res.data.reduce((acc, log) => {
+            const key = log.updateGroupId;
+
+            if(!acc[key]) {
+              acc[key] = [];
+            }
+            
+            acc[key].push(log);
+
+            return acc;
+          }, {})
+        );
+        setAuditLog(grouped);
+      }catch(error){
+        console.log(error);
+      }
+    };
+    logFetch();
+  }, [id])
+
+  const formatStatus = (log) => {
+    const statusLogs = log.filter(l => l.fieldName === "status");
+
+    if(statusLogs.length === 0) return null;
+
+    const flow = [
+      statusLogs[0].beforeValue,
+      ...statusLogs.map(l => l.afterValue)
+    ];
+
+    return `상태변경 (${flow.join(" → ")})`;
+  }
+
+ const deleteTask = async (item) => {
+  const reason = prompt('삭제 사유를 입력하세요.');
+  if(!reason) return;
+
+  const ok = window.confirm('정말 삭제하시겠습니까?');
+  if(!ok) return;
+
+    try{
+      await api.delete(`/api/tasks/${item}`, {data: reason});
+      nav("/tasks");
+    }catch(error){
+      console.log(error);
+    }
+
+ }
 
   if (loading)
     return <div className="taskdetail__state">불러오는 중...</div>;
@@ -169,19 +226,26 @@ export default function TaskDetail() {
               목록으로
             </NavLink>
 
-            <NavLink
-              className="taskdetail__btn"
-              to={`/tasks/${id}/edit`}
-            >
-              수정
-            </NavLink>
+            {/* 현재 사용자 권한이 ADMIN or 작성자랑 현재 사용자 or 담당자랑 현재 사용자랑 같은지 */}
+            { (role || task.createdById === Number(user.id) || task.assigneeId == Number(user.id)) && (
+              <>
+              <NavLink
+                className="taskdetail__btn"
+                to={`/tasks/${id}/edit`}
+              >
+                수정
+              </NavLink>
 
-            <button
-              type="button"
-              className="taskdetail__btn taskdetail__btn--danger"
-            >
-              삭제
-            </button>
+              <button
+                type="button"
+                className="taskdetail__btn taskdetail__btn--danger"
+                onClick={() => deleteTask(task.id)}
+              >
+                삭제
+              </button>
+              </>
+            )
+            }
           </div>
 
         </div>
@@ -237,7 +301,6 @@ export default function TaskDetail() {
           {/* 첨부파일 (모듈 분리 컴포넌트) */}
           <AttachmentList
             attachments={attachments}
-            onDeleted={onAttachmentDeleted}
           />
 
         </div>
@@ -251,6 +314,7 @@ export default function TaskDetail() {
         />
 
         {/* 오른쪽: 정보 */}
+        <div>
         <div className="taskdetail__card taskdetail__card--meta">
 
           <div className="taskdetail__metaRow">
@@ -283,6 +347,55 @@ export default function TaskDetail() {
 
         </div>
 
+        {/* 오른쪽: 수정 정보 */}
+        {auditLog.length === 0 ? (<div></div>) :
+          (<>
+          <div className="taskdetail__updateTitle">수정 내용</div>
+            {auditLog.slice(0, expended ? auditLog.length : 3).map((log, index) => (
+            <div key={index} className="taskdetail__card taskdetail__card--meta">
+              <div className="taskdetail__metaRow">
+                <div className="taskdetail__metaKey">수정자</div>
+                <div className="taskdetail__metaVal">
+                  {log[0].actor.name} {log[0].actor.department}
+                </div>
+              </div>
+                <div className="taskdetail__metaRow">
+                  <div className="taskdetail__metaKey">수정필드</div>
+                  <div className="taskdetail__metaVal">
+                    {[formatStatus(log),
+                      ...log.filter(a => a.fieldName !== "status")
+                      .map(a => auditLogtFieldnameLabel(a.fieldName))]
+                    .filter(Boolean)
+                    .join(", ")
+                    }
+                    {/* {log.map(a => auditLogtFieldnameLabel(a.fieldName)).join(", ")} */}
+                  </div>
+                </div>
+
+              <div className="taskdetail__metaRow">
+                <div className="taskdetail__metaKey">수정사유</div>
+                <div className="taskdetail__metaVal">
+                  {log[0].reason ?? "-"}
+                </div>
+              </div>
+
+              <div className="taskdetail__metaRow">
+                <div className="taskdetail__metaKey">수정일</div>
+                <div className="taskdetail__metaVal">
+                  {formatRelativeDateTime(log[0].createdAt)}
+                </div>
+              </div>
+            </div>
+          ))}
+          </>
+        )}
+          {auditLog.length > 3 && (
+            <button className="taskdetail__expended" onClick={() => setExpended(prev => !prev)}>
+              {expended ? "접기" : "더보기"}
+            </button>
+          )}
+
+      </div>
       </div>
 
     </div>

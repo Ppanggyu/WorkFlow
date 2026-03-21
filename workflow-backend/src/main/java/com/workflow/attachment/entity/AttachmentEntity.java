@@ -2,7 +2,14 @@ package com.workflow.attachment.entity;
 
 import java.time.LocalDateTime;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,15 +19,17 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class AttachmentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;  
+    private Long id;
     // 첨부파일 고유 ID, DB PK
-
+    
     @Column(name = "task_id", nullable = false)
-    private Long taskId;  
+    private Long taskId;
     // 연관 업무(task) ID
     // tasks 테이블 ID(FK 역할)
     // 어떤 업무에 속하는 첨부인지 구분

@@ -26,7 +26,7 @@ import lombok.Setter;
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA 프록시용
 @Builder
 public class TaskEntity {
-
+	
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // PK, 업무 고유 ID
@@ -56,11 +56,11 @@ public class TaskEntity {
     @Column(name = "due_date")
     private LocalDate dueDate; // 마감일
 
-    @Column(name = "hold_reason", columnDefinition = "TEXT")
-    private String holdReason; // ON_HOLD 상태일 때 사유
+//    @Column(name = "hold_reason", columnDefinition = "TEXT")
+//    private String holdReason; // ON_HOLD 상태일 때 사유
 
-    @Column(name = "cancel_reason", columnDefinition = "TEXT")
-    private String cancelReason; // CANCELED 상태일 때 사유
+//    @Column(name = "cancel_reason", columnDefinition = "TEXT")
+//    private String cancelReason; // CANCELED 상태일 때 사유
 
     @Column(name = "is_deleted", nullable = false)
     @Builder.Default
@@ -94,6 +94,9 @@ public class TaskEntity {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt; // 최종 수정 시점
+    
+    @Version
+	private Long version;
 
     // 엔티티 저장 직전 기본값 및 부서 세팅
     @PrePersist

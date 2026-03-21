@@ -31,7 +31,7 @@ class VideoBlot extends BlockEmbed {
   static blotName = "video";
   static tagName = "div"; // 블록 형태로 삽입
   static className = "ql-video-wrapper";
-
+  
   static create(value) {
     const wrapper = super.create();
     wrapper.style.position = "relative";
@@ -55,7 +55,6 @@ class VideoBlot extends BlockEmbed {
     const iframe = document.createElement("iframe");
     iframe.setAttribute("src", convertYoutubeUrl(src)); // 자동 변환
     iframe.setAttribute("frameborder", "0");
-    iframe.setAttribute("allowfullscreen", "true");
     iframe.setAttribute("allow", "autoplay; fullscreen");
     Object.assign(iframe.style, {
       width: "100%",
