@@ -118,6 +118,20 @@
 - JWT + Spring Security Filter 체인
 - Access / Refresh Token 분리 전략
 ---
+## ⚠️ 트러블슈팅
+
+### 1. JWT Refresh Token 재사용 문제
+- 문제: 탈취된 Refresh Token으로 무한 재발급 가능
+- 해결:
+  - Rotation 적용
+  - DB에 해시 저장
+  - 이전 토큰 무효화
+
+### 2. 상태 전이 로직 복잡도 증가
+- 문제: if-else 증가
+- 해결:
+  - Enum + 상태 전이 정책 분리
+---
 
 ## 🚧 진행 중 기능
 
