@@ -127,7 +127,7 @@
 <details>
 <summary><b>Dashboard</b></summary>
 
-<img width="1924" height="1201" alt="DashBoard" src="https://github.com/user-attachments/assets/ffe9d8c1-fd5a-4b6d-92db-5d988dc779b0" />
+<img width="1727" height="833" alt="Dashboard" src="https://github.com/user-attachments/assets/39e7f4bd-1701-46c8-9d11-61ce35b14a56" />
 
 </details>
 
@@ -141,6 +141,7 @@
 <summary><b>List</b></summary>
 
 <img width="1816" height="1211" alt="List" src="https://github.com/user-attachments/assets/00d0d52e-51b0-4297-8b3d-0070fc9e4543" />
+<img width="2116" height="1113" alt="TaskMain" src="https://github.com/user-attachments/assets/8dbcc7bc-2b62-4af7-a32d-e6eb6a37ca6d" />
 
 </details>
 </li>
