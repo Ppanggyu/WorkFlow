@@ -49,8 +49,8 @@
 ### 1️⃣ 사용자 / 인증 / 권한
 
 - Spring Security + JWT 기반 인증
-  - Access Token: API 호출 인증, 만료 15분
-  - Refresh Token: Access Token 갱신, DB 해시값 저장, Rotation 적용, 만료 14일
+  - Access Token: API 호출 인증, 만료 15분, 메모리 기반 저장
+  - Refresh Token: Access Token 갱신, DB 해시값 저장, Rotation 적용, 만료 14일, 쿠키 기반 저장
 - Cookie 기반 토큰 전달 (Secure / HttpOnly / SameSite), 만료 14일
 - 로그인 / 로그아웃
   - 비밀번호 해시 처리 후 DB 저장 및 검증
