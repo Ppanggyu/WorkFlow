@@ -209,8 +209,8 @@
 <li>
 <details>
 <summary><b>Create</b></summary>
-
-<img width="1742" height="904" alt="Create" src="https://github.com/user-attachments/assets/61283514-ffa8-4412-8e70-71a69c903993" />
+  
+<img width="1923" height="1590" alt="localhost_5173_tasks_create (2)" src="https://github.com/user-attachments/assets/15ea55df-9043-45eb-8dc4-04e72b021ee2" />
 
 </details>
 </li>
