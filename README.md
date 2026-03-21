@@ -109,9 +109,9 @@
 ## 🏗️ 아키텍처
 
 - Layered Architecture (Controller / Service / Repository)
-- DTO 분리 (Request / Response)
+- DTO 활용
 - Entity 직접 노출 방지
-- 공통 응답 구조 (ApiResponse)
+- 공통 예외처리 응답 구조 (ApiException)
 - 예외 처리 (GlobalExceptionHandler)
 
 ### 인증 구조
@@ -127,15 +127,15 @@
   - DB에 해시 저장
   - 이전 토큰 무효화
 
-### 2. 상태 전이 로직 복잡도 증가
+### 2. 로직 복잡도 증가
 - 문제: if-else 증가
 - 해결:
-  - Enum + 상태 전이 정책 분리
+  - Enum 활용
 ---
 ## 💡 핵심 구현 포인트
 
 - 고정된 값들은 Enum 기반으로 분리하여 확장 가능하도록 설계
-- Activity Log를 통해 모든 변경 이력 추적 가능하도록 구현
+- AuditLog를 통해 모든 변경 이력 추적 가능하도록 구현
 - Refresh Token Rotation으로 보안 강화
 ---
 
