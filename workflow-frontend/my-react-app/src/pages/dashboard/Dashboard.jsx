@@ -40,7 +40,6 @@ export default function Dashboard() {
         }})
         setTaskData(res.data.content);
         setTotalPages(res.data.totalPages);
-        console.log(res.data.content);
       }catch(error){
         console.log(error);
       }

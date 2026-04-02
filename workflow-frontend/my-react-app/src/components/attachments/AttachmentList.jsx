@@ -86,10 +86,10 @@ export default function AttachmentList({
   //   console.log(attList);
   // }, [attList]);
   
-  // 수정페이지 인가? && 불러올게 없는가?
-  if(editPage && (list.length == 0)){
-    return null;
-  }
+  // 수정페이지 인가? || 불러올게 없는가?
+  // if(editPage){
+  //   return null;
+  // }
 
   return (
     <div className="taskdetail__attach">

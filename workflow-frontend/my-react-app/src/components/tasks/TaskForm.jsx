@@ -192,7 +192,6 @@ export default function TaskForm({ mode, taskId }) {
         setDescription(res.data.description);
         setBeforeStatus(res.data.status);
         setVersion(res.data.version);
-        console.log(res.data.version);
       } catch(error){
         setErrors(error.response.data.message || error.message);
       }
@@ -340,15 +339,22 @@ export default function TaskForm({ mode, taskId }) {
               </button>
             </div>
           </div>
+        </div>
               {mode === "edit" && (
               <div className="taskform__section">
                 <label className="taskform__label">수정 사유</label>
                 <textarea
+                className="taskform__input taskform__update"
                 value={reason}
-                onChange={(e) => setReason(e.target.value)} />
+                onChange={(e) => {
+                  const el = e.target;
+                  el.style.height = 'auto';
+                  el.style.height = el.scrollHeight + 'px';
+
+                  setReason(el.value); // 필수
+                }}/>
               </div>
-            )}
-        </div>
+              )}
 
         {/* 업무 내용 */}
         <div className="taskform__section">
@@ -369,9 +375,10 @@ export default function TaskForm({ mode, taskId }) {
         </div>
 
       </form>
-
       {/* 첨부파일 (모듈 분리 컴포넌트) */}
+      {isEdit ? 
       <AttachmentList attachments={attachments} onDeleted={onAttachmentDeleted} setAttList={setAttList}/>
+      : <div></div> }
 
       {/* 첨부파일 입력 */}
       <AttachmentInput value={attachFiles} onChange={setAttachFiles} />
