@@ -9,7 +9,7 @@ import { formatRelativeDateTime, ddayLabel } from "../../utils/dateUtils";
 import { useAuth } from "../../auth/hooks/useAuth.js"
 import { userFromToken } from "../../auth/utils/userFromToken.js"
 import { userRole } from "../../auth/utils/userRole.js"
-import { auditLogtFieldnameLabel } from "../../utils/auditLogUitls.js"
+import { auditLogLabel } from "../../utils/auditLogUitls.js"
 
 import ImageModal from "../../components/common/ImageModal";
 
@@ -19,6 +19,7 @@ import AttachmentList from "../../components/attachments/AttachmentList";
 export default function TaskDetail() {
 
   const { id } = useParams();
+  const { scope } = useParams();
   const nav = useNavigate();
 
   const [task, setTask] = useState(null);
@@ -27,7 +28,7 @@ export default function TaskDetail() {
 
   const {accessToken} = useAuth(); // JWT Decode용
   const user = userFromToken(accessToken); // JWT Deocde
-  const role = userRole(user);
+  const [canAccess, setCanAcess] = useState(false);
   const [auditLog, setAuditLog] = useState([]);
   const [expended, setExpended] = useState(false); // 더보기, 접기 용
 
@@ -78,10 +79,12 @@ export default function TaskDetail() {
       setErr("");
 
       try {
-        const res = await api.get(`/api/tasks/${id}`, {
+        const res = await api.get(`/api/tasks/${id}/${scope}`, {
           signal: controller.signal, // 스위치 연결
         });
         setTask(res.data);
+        const access = await userRole(user, res.data);
+        setCanAcess(access);
       } catch (e) {
         if (e.name === "CanceledError" || e.code === "ERR_CANCELED") return;
 
@@ -177,8 +180,44 @@ export default function TaskDetail() {
     }catch(error){
       console.log(error);
     }
-
  }
+
+ const resotre = async (taskId) => {
+
+  const reason = prompt('업무 복구 사유를 입력하세요.');
+  if(!reason) return;
+
+  try{
+    await api.post(`/api/tasks/resotre/${taskId}`, {data: reason});
+    nav("/tasks");
+  }catch(error){
+    console.loog(error);
+    alert("업무 복구 실패")
+  }
+ }
+
+  const likedHandler = async (bool, taskId) => {
+    // 즐겨찾기 활성화 비활성화 -> bool = true or false
+    const prevTasks = task;
+
+    setTask(prev => ({
+      ...prev,
+      liked: !bool
+    }));
+
+    try{
+        if(bool){
+          await api.delete(`/api/likes/${taskId}`);
+        }else{
+          await api.post(`/api/likes/${taskId}`);
+        }
+      }catch(error){
+        console.log(error);
+
+        setTask(prevTasks);
+      }
+
+  };
 
   if (loading)
     return <div className="taskdetail__state">불러오는 중...</div>;
@@ -214,7 +253,14 @@ export default function TaskDetail() {
             </div>
 
             <h2 className="taskdetail__title">
-              {task.title}
+              <span>{task.liked ? 
+              <button className="like__onBtn" 
+                onClick={() => {likedHandler(true, task.id)
+              }}>⭐</button>
+              : 
+              <button className="like__offBtn" 
+                onClick={() => {likedHandler(false, task.id)
+              }}>☆</button>}</span>  {task.title}
             </h2>
           </div>
 
@@ -225,27 +271,35 @@ export default function TaskDetail() {
             >
               목록으로
             </NavLink>
+            
+            {scope !== "deleted" ? (
+              (canAccess) && (
+                <>
+                <NavLink
+                  className="taskdetail__btn"
+                  to={`/tasks/${id}/edit`}
+                >
+                  수정
+                </NavLink>
 
-            {/* 현재 사용자 권한이 ADMIN or 작성자랑 현재 사용자 or 담당자랑 현재 사용자랑 같은지 */}
-            { (role || task.createdById === Number(user.id) || task.assigneeId == Number(user.id)) && (
-              <>
-              <NavLink
-                className="taskdetail__btn"
-                to={`/tasks/${id}/edit`}
-              >
-                수정
-              </NavLink>
-
-              <button
-                type="button"
-                className="taskdetail__btn taskdetail__btn--danger"
-                onClick={() => deleteTask(task.id)}
-              >
-                삭제
+                <button
+                  type="button"
+                  className="taskdetail__btn taskdetail__btn--danger"
+                  onClick={() => deleteTask(task.id)}
+                >
+                  삭제
+                </button>
+                </>
+              ))
+              :
+              (
+              <button 
+              type="button"
+              className="taskdetail__btn taskdetail__btn--danger"
+              onClick={() => resotre(task.id)}>
+                복구
               </button>
-              </>
-            )
-            }
+              )}
           </div>
 
         </div>
@@ -320,14 +374,28 @@ export default function TaskDetail() {
           <div className="taskdetail__metaRow">
             <div className="taskdetail__metaKey">작성자</div>
             <div className="taskdetail__metaVal">
-              {task.createdByName ?? task.creatorName ?? "-"}
+              {(() => {
+                const name = task.createdByName ?? task.creatorName;
+                const dept = task.createdByDepartmentName;
+
+                return name ?
+                `${name}${dept ? `(${dept})` : ""}`
+                : "-";
+              }) ()}
             </div>
           </div>
 
           <div className="taskdetail__metaRow">
             <div className="taskdetail__metaKey">담당자</div>
             <div className="taskdetail__metaVal">
-              {task.assigneeName ?? "-"}
+              {(() => {
+                const name = task.assigneeName;
+                const dept = task.assigneeDepartmentName;
+
+                return name ?
+                `${name}${dept ? `(${dept})` : ""}`
+                : "-";
+              }) ()}
             </div>
           </div>
 
@@ -356,7 +424,7 @@ export default function TaskDetail() {
               <div className="taskdetail__metaRow">
                 <div className="taskdetail__metaKey">수정자</div>
                 <div className="taskdetail__metaVal">
-                  {log[0].actor.name} {log[0].actor.department}
+                  {log[0].actor.name} ({log[0].actor.department})
                 </div>
               </div>
                 <div className="taskdetail__metaRow">
@@ -364,11 +432,11 @@ export default function TaskDetail() {
                   <div className="taskdetail__metaVal">
                     {[formatStatus(log),
                       ...log.filter(a => a.fieldName !== "status")
-                      .map(a => auditLogtFieldnameLabel(a.fieldName))]
+                      .map(a => auditLogLabel(a.fieldName))]
                     .filter(Boolean)
                     .join(", ")
                     }
-                    {/* {log.map(a => auditLogtFieldnameLabel(a.fieldName)).join(", ")} */}
+                    {/* {log.map(a => auditLogLabel(a.fieldName)).join(", ")} */}
                   </div>
                 </div>
 

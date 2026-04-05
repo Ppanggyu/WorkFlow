@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.workflow.common.exception.ApiException;
 import com.workflow.common.exception.ErrorCode;
+import com.workflow.tasks.dto.TaskResponse;
 import com.workflow.user.dto.UserSimpleResponse;
 import com.workflow.user.entity.UserEntity;
 import com.workflow.user.enums.Role;
@@ -45,6 +46,19 @@ public class UserService {
 				.toList();
 
 		return list;
+	}
+	
+	public Boolean dept(Long user, TaskResponse req) {
+		
+		UserEntity loginUser = userRepository.findById(user)
+				.orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "너 사용자 맞아?"));
+		
+		boolean isCreator = loginUser.getDepartment().getCode().equals(req.getCreatedByDepartmentCode());
+		boolean isAssignee = req.getAssigneeId() != null ? 
+				loginUser.getDepartment().getCode().equals(req.getAssigneeDepartmentCode())
+				: false;
+		
+		return isCreator || isAssignee;
 	}
 
 }

@@ -52,24 +52,36 @@ public class TaskResponse {
 
     private List<AttachmentResponse> attachments; // 첨부파일 리스트
     private long attachmentsCount;                // 첨부파일 개수, 목록/상세 공통
+    
+    private boolean liked;
 
     // 정적 빌더 변환 메서드
     
     // 상세 조회용: 첨부 리스트 포함
-    public static TaskResponse from(TaskEntity t, List<AttachmentResponse> attachments) {
+    public static TaskResponse from(TaskEntity t, List<AttachmentResponse> attachments
+    		, boolean liked
+    		) {
         long count = (attachments == null) ? 0 : attachments.size();
-        return from(t, attachments, count);
+        return from(t, attachments, count
+        		, liked
+        		);
     }
 
     // 목록 조회용: 첨부 리스트 없이 개수만
-    public static TaskResponse from(TaskEntity t, long attachmentsCount) {
-        return from(t, List.of(), attachmentsCount);
+    public static TaskResponse from(TaskEntity t, long attachmentsCount
+    		, boolean liked
+    		) {
+        return from(t, List.of(), attachmentsCount
+        		, liked
+        		);
     }
 
     // 공통 빌더: 생성자, 담당자, 부서 정보 모두 포함
     public static TaskResponse from(TaskEntity t,
                                        List<AttachmentResponse> attachments,
-                                       long attachmentsCount) {
+                                       long attachmentsCount
+                                       , boolean liked
+                                       ) {
 
         UserEntity cb = t.getCreatedBy();  // 생성자 정보
         UserEntity as = t.getAssignee();   // 담당자 정보
@@ -109,11 +121,17 @@ public class TaskResponse {
 
                 .attachments(attachments != null ? attachments : List.of())
                 .attachmentsCount(Math.max(0, attachmentsCount)) // 음수 방어
+                
+                .liked(liked)
                 .build();
     }
 
     // 기존 코드 호환용: 첨부파일 0개 처리
-    public static TaskResponse from(TaskEntity t) {
-        return from(t, 0);
+    public static TaskResponse from(TaskEntity t
+    		, boolean liked
+    		) {
+        return from(t, 0
+        		, liked
+        		);
     }
 }

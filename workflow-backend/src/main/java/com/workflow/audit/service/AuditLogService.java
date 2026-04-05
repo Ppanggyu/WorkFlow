@@ -3,10 +3,12 @@ package com.workflow.audit.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.workflow.attachment.entity.AttachmentEntity;
 import com.workflow.audit.dto.AuditChanges;
 import com.workflow.audit.dto.AuditLogResponse;
 import com.workflow.audit.entity.AuditLogEntity;
@@ -103,22 +105,48 @@ public class AuditLogService {
         }
     }
     
+    // 업무 삭제 로그
     public void taskDelete(TaskEntity task, UserEntity user, String reason) {
     	
     	AuditLogEntity deleteLog = AuditLogEntity.builder()
     			.task(task)
     			.actor(user)
-    			.actionType(AuditTaskActionType.TASK_DELTED.toString())
+    			.actionType(AuditTaskActionType.TASK_DELETED.toString())
     			.createdAt(LocalDateTime.now())
     			.updateGroupId(UUID.randomUUID().toString())
     			.reason(reason)
-    			.fieldName(AuditTaskActionType.TASK_DELTED.toString())
+    			.fieldName(AuditTaskActionType.TASK_DELETED.toString())
     			.beforeValue("TaskId:"+task.getId()+"/제목:"+task.getTitle())
-    			.afterValue(AuditTaskActionType.TASK_DELTED.toString())
+    			.afterValue(AuditTaskActionType.TASK_DELETED.toString())
     			.build();
     	
     	auditLogRepository.save(deleteLog);
     			
+    }
+    
+    // 업무 복구 로그
+    public void taskResotre(TaskEntity task, UserEntity user, List<AttachmentEntity> list, String reason) {
+    	
+    	String attList = list.isEmpty() ? "" : 
+    		"/복구파일수:" + list.size() + "/복구파일:" + list.stream()
+    		.map(AttachmentEntity::getStoredFilename)
+    		.collect(Collectors.joining(", "));
+    	
+    	
+    	AuditLogEntity resotreLog = AuditLogEntity.builder()
+    			.task(task)
+    			.actor(user)
+    			.actionType(AuditTaskActionType.TASK_RESOTRE.toString())
+    			.createdAt(LocalDateTime.now())
+    			.updateGroupId(UUID.randomUUID().toString())
+    			.reason(reason)
+    			.fieldName(AuditTaskActionType.TASK_RESOTRE.toString())
+    			.beforeValue(AuditTaskActionType.TASK_RESOTRE.toString())
+    			.afterValue("TaskId:"+task.getId()+"/제목:"+task.getTitle() + attList != null ? attList : "")
+    			.build();
+    	
+    	auditLogRepository.save(resotreLog);
+    	
     }
 
 }

@@ -66,6 +66,8 @@ public interface AttachmentRepository extends JpaRepository<AttachmentEntity, Lo
     // - UI에서 파일 아이콘/카운트 표시 등에 사용
 
 	List<AttachmentEntity> findByTaskIdAndIsDeletedFalse(Long id);
+	List<AttachmentEntity> findByTaskIdAndIsDeletedTrue(Long taskId);
 	
 	List<AttachmentEntity> findByTaskIdInAndIsDeletedTrue(List<Long> tasks);
+	
 }

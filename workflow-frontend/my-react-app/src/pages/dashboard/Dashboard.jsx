@@ -138,7 +138,8 @@ export default function Dashboard() {
             {/* body */}
             <div className="dashboard__task-table__body">
               {taskData.map((item) => (
-                <div className="dashboard__task-table__row" key={item.id} onClick={() => nav(`/tasks/${item.id}`)}>
+                <div className="dashboard__task-table__row" key={item.id} onClick={
+                  () => nav(`/tasks/${item.id}${scope === "created" ? "/created" : "/assigned"}`)}>
                   <div className="dashboard__task-table-rowData dashboard__task-table-title">{item.title}</div>
                   <div className="dashboard__task-table-rowData dashboard__task-table-dueDate">{ddayLabel(item.dueDate)}</div>
                   <div className="dashboard__task-table-rowData dashboard__task-table-createdAt">{formatRelativeDateTime(item.createdAt)}</div>

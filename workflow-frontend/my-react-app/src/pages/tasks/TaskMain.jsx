@@ -14,13 +14,15 @@ import { api } from "../../api/api";
 import { useAuth } from "../../auth/hooks/useAuth";
 
 // 업무 범위와 상태 상수
-import { SCOPES, STATUSES } from "../../constants/taskOptions";
+import { DEPARTMENT, SCOPES, STATUSES } from "../../constants/taskOptions";
 
 // visibility 코드 → 문자열 라벨 변환
 import { visibilityLabel } from "../../utils/taskUtils";
 
 // 날짜 처리 관련 유틸
 import { parseLocalDate, ddayLabel, dueClass, formatListDateTime } from "../../utils/dateUtils";
+
+import { showDepteSelected } from "../../auth/utils/userRole.js"
 
 // 서버 응답이 없거나 배열만 반환될 때 기본 구조
 const EMPTY_PAGE = {
@@ -33,22 +35,6 @@ const EMPTY_PAGE = {
   last: true,         // 마지막 페이지 여부
 };
 
-/**
- * 유튜브 URL → 썸네일 URL 변환
- * iframe 대신 리스트 카드에서는 이미지 미리보기로 사용
- * @param url - 유튜브 영상 URL
- * @returns 썸네일 이미지 URL
- */
-const getVideoThumbnail = (url) => {
-  try {
-    // https://www.youtube.com/watch?v=ID
-    const vid = new URL(url).searchParams.get("v") || url.split("/").pop();
-    return vid ? `https://img.youtube.com/vi/${vid}/0.jpg` : null;
-  } catch {
-    return null;
-  }
-};
-
 export default function Tasks() {
   // 로그인 사용자 정보 가져오기
   const { user } = useAuth(); // eslint-disable-line no-unused-vars
@@ -59,7 +45,10 @@ export default function Tasks() {
   // URL에서 scope, status, page 추출
   const qpScope = sp.get("scope") || "all";  
   const qpStatus = sp.get("status") || "";   
-  const qpPageRaw = sp.get("page");          
+  const qpDept = sp.get("dept") || "";   
+  const qpPageRaw = sp.get("page");    
+  
+  const [isEnabled, setIsEnabled] = useState(false);
 
   // page는 문자열 → 숫자로 변환, 유효하지 않으면 0으로 초기화
   const qpPage = useMemo(() => {
@@ -76,10 +65,15 @@ export default function Tasks() {
     () => (qpStatus === "" || STATUSES.includes(qpStatus) ? qpStatus : ""),
     [qpStatus]
   );
+  const normalizedDept = useMemo(
+    () => (qpDept === "" || DEPARTMENT.includes(qpDept) ? qpDept : ""),
+    [qpDept]
+  );
 
   // 화면에서 선택한 scope/status/page 상태
   const [scope, setScope] = useState(normalizedScope);
   const [status, setStatus] = useState(normalizedStatus);
+  const [dept, setDept] = useState(normalizedDept)
   const [page, setPage] = useState(qpPage);
 
   // 로딩 상태 관리
@@ -96,11 +90,11 @@ export default function Tasks() {
   const totalPages = pageData.totalPages; 
 
   // URL 변경 시 state 동기화
-  useEffect(() => {
-    setScope(normalizedScope);
-    setStatus(normalizedStatus);
-    setPage(qpPage);
-  }, [normalizedScope, normalizedStatus, qpPage]);
+  // useEffect(() => {
+  //   setDept(normalizedDept);
+  //   setStatus(normalizedStatus);
+  //   setPage(qpPage);
+  // }, [normalizedDept, normalizedStatus, qpPage]);
 
   /**
    * URL 쿼리 업데이트
@@ -133,6 +127,14 @@ export default function Tasks() {
     setStatus(nextStatus);
     setPage(0); 
     updateParams({ status: nextStatus, page: 0 });
+  };
+
+  // 부서별 조회 변경
+  const onChangeDept = (v) => {
+    const nextDept = v && DEPARTMENT.includes(v) ? v : "";
+    setDept(nextDept);
+    setPage(0); 
+    updateParams({ dept: nextDept, page: 0 });
   };
 
   // 페이지 변경 시 URL 동기화
@@ -200,6 +202,7 @@ export default function Tasks() {
     try {
       const params = { scope: scope || "all", page, size };
       if (status) params.status = status;
+      if (dept) params.dept = dept;
       const res = await api.get("/api/tasks", { params });
       const normalized = normalizePageResponse(res.data);
       setPageData(normalized);
@@ -213,7 +216,7 @@ export default function Tasks() {
     } finally {
       setLoading(false);
     }
-  }, [scope, status, page, size, updateParams]);
+  }, [scope, status, dept, page, size, updateParams]);
 
   useEffect(() => {
     fetchTasks();
@@ -278,27 +281,64 @@ export default function Tasks() {
     const hasImgInDesc = hasImageInHtml(rawHtml);
     const hasVideoInDesc = hasVideoInHtml(rawHtml);
 
-    // 추가: 카드용 미리보기용 썸네일 URL 반환
-    let previewImage = null;
-    if (hasImgInDesc) {
-      const doc = new DOMParser().parseFromString(rawHtml, "text/html");
-      const img = doc.querySelector("img");
-      if (img) previewImage = img.src;
-    } else if (hasVideoInDesc) {
-      const doc = new DOMParser().parseFromString(rawHtml, "text/html");
-      const iframe = doc.querySelector("iframe");
-      if (iframe) previewImage = getVideoThumbnail(iframe.src); // 유튜브 썸네일
-    }
-
     return {
       count,
       hasAnyFile,
       hasImage: hasImageFile || hasImgInDesc,
       hasVideo: hasVideoFile || hasVideoInDesc,
-      previewImage, // 추가: 카드에서 보여줄 미리보기
     };
   };
 
+  const likedHandler = async (bool, taskId) => {
+    // 즐겨찾기 활성화 비활성화 -> bool = true or false
+    const prevTasks = pageData;
+    
+    
+    try{
+      if(bool){
+        await api.delete(`/api/likes/${taskId}`);
+      }else{
+        await api.post(`/api/likes/${taskId}`);
+      }
+      if(scope === "like"){
+        fetchTasks();
+      }
+      else{
+        setPageData(prev => ({
+          ...prev,
+          content: prev.content.map(task => 
+            task.id === taskId ?
+            { ...task, liked: !bool}
+            : task
+          )
+        }));
+      }
+      }catch(error){
+        console.log(error);
+
+        setPageData(prevTasks);
+      }
+
+  };
+
+const resotre = async (taskId) => {
+
+  const reason = prompt('업무 복구 사유를 입력하세요.');
+  if(!reason) return;
+
+  try{
+    await api.post(`/api/tasks/resotre/${taskId}`, {data: reason});
+    fetchTasks();
+  }catch(error){
+    console.loog(error);
+    alert("업무 복구 실패")
+  }
+ }
+
+ useEffect(() => {
+  setIsEnabled(scope=="all" || scope=="deleted" || scope=="public");
+ }, [scope])
+  
   return (
     <div className="tasks">
       <div className="tasks__header">
@@ -350,9 +390,40 @@ export default function Tasks() {
             >
               담당 업무
             </button>
+
+            <button
+              type="button"
+              className={`tasks__tab ${scope === "like" ? "is-active" : ""}`}
+              onClick={() => onChangeScope("like")}
+            >
+              즐겨찾기
+            </button>
+
+            <button
+              type="button"
+              className={`tasks__tab ${scope === "deleted" ? "is-active" : ""}`}
+              onClick={() => onChangeScope("deleted")}
+            >
+              삭제된 업무
+            </button>
           </div>
 
           <div className="tasks__filters">
+
+
+            {showDepteSelected(user) ? 
+              <select 
+              disabled={!isEnabled}
+              className="tasks__select" value={isEnabled ? dept : ""} onChange={(e) => onChangeDept(e.target.value)}>
+                  <option value="">전체</option>
+                  {DEPARTMENT.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                  </select>
+              : ""}
+
             <select className="tasks__select" value={status} onChange={(e) => onChangeStatus(e.target.value)}>
               <option value="">전체</option>
               {STATUSES.map((s) => (
@@ -399,7 +470,7 @@ export default function Tasks() {
               key={t.id}
               className={`tasks__card tasks__card--${(t.status || "").toLowerCase()} ${dueClass(t.dueDate, t.status)}`}
             >
-              <NavLink to={`/tasks/${t.id}`} className="tasks__cardLink">
+              <NavLink to={`/tasks/${t.id}/${scope}`} className="tasks__cardLink">
                 <div className="tasks__cardTop">
                   <strong className="tasks__cardTitle">{t.title}</strong>
 
@@ -425,6 +496,26 @@ export default function Tasks() {
                         🎬
                       </span>
                     )}
+                    {scope !== "deleted" ? 
+                    <span>
+                    {t.liked ? 
+                    <button className="like__onBtn" onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      likedHandler(true, t.id)
+                    }}>⭐</button>
+                    : 
+                    <button className="like__offBtn" onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      likedHandler(false, t.id)}}>☆</button>}
+                      </span>
+                      : 
+                    <button className="taskdetail__btn taskdetail__btn--danger" onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      resotre(t.id)}}
+                    >복구</button>}
                   </div>
                 </div>
 

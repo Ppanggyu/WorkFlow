@@ -36,7 +36,7 @@ export default function App() {
             <Route path="/tasks/create" element={<TaskCreate />} />
 
             {/* 업무 상세 페이지 (URL 파라미터 :id 사용) */}
-            <Route path="/tasks/:id" element={<TaskDetail />} />
+            <Route path="/tasks/:id/:scope" element={<TaskDetail />} />
 
             {/* 업무 수정 페이지 (URL 파라미터 :id 사용) */}
             <Route path="/tasks/:id/edit" element={<TaskEdit />} />

@@ -14,7 +14,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.workflow.tasks.entity.TaskEntity;
 import com.workflow.tasks.enums.TaskStatus;
-import com.workflow.user.entity.UserEntity;
+import com.workflow.user.enums.Role;
 
 public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
 
@@ -44,10 +44,108 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
 	@EntityGraph(attributePaths = { "createdBy", "assignee" })
 	Page<TaskEntity> findByIsDeletedFalseAndAssignee_Id(Long assigneeId, Pageable pageable);
     // 특정 사용자가 담당인 삭제되지 않은 Task 조회
+	
+	// like 탭
+	@Query("""
+			select t
+			from LikesEntity l
+			left join TaskEntity t
+			on t.id = l.taskId.id
+			and l.userId.id = :userId
+			where t.isDeleted = false
+			order by l.id desc
+			""")
+	Page<TaskEntity> findByLikeTask(@Param("userId")Long userId, Pageable pageable);
+	
+	// like 탭 + status 조회
+	@Query("""
+			select t
+			from LikesEntity l
+			left join TaskEntity t
+			on t.id = l.taskId.id
+			and l.userId.id = :userId
+			where t.isDeleted = false
+			and t.status = :status
+			order by l.id desc
+			""")
+	Page<TaskEntity> findLikeTaskWithStatus(@Param("userId")Long userId, @Param("status")TaskStatus status, Pageable pageable);
+	
+	// deleted 탭 : 삭제된 업무
+	@Query("""
+			select t
+			from TaskEntity t
+			where t.isDeleted = true
+			and 
+			(t.createdBy.id = :userId
+			or t.assignee.id = :userId)
+			""")
+	Page<TaskEntity> findDeletedList(@Param("userId")Long userId, Pageable pageable); 
+	
+	// deleted 탭 + status
+	@Query("""
+			select t
+			from TaskEntity t
+			where t.isDeleted = true
+			and 
+			(t.createdBy.id = :userId
+			or t.assignee.id = :userId)
+			and t.status = :status
+			""")
+	Page<TaskEntity> findDeletedListWithStatus(@Param("userId")Long userId, @Param("status")TaskStatus status, Pageable pageable); 
+	
+	// admin 기준 deleted 탭
+	Page<TaskEntity> findByIsDeletedTrue(Pageable pageable); 
+	
+	// admin 기준 deleted 탭 + status + dept
+	@Query("""
+			select t
+			from TaskEntity t
+			where t.isDeleted = true
+			and (
+			:status is null
+			or t.status = :status
+			)
+		    and (:dept is null
+			    or t.ownerDepartment.name = :dept
+				or t.workDepartment.name = :dept
+			)
+			""")
+	Page<TaskEntity> findIsDeletedTaskWithStatusAndDept(@Param("status")TaskStatus status, @Param("dept")String dept, Pageable pageable);
+	
+	// manager 기준 deleted 탭 팀원이 삭제한거, 자기가 작성한거, 담당자로 받은거
+	@Query("""
+			select t
+			from TaskEntity t
+			where t.isDeleted = true
+			and exists (
+				select 1
+				from AuditLogEntity a
+				where a.task = t
+				and a.actor.id in :userId
+				and a.actionType = 'TASK_DELETED'
+			)
+			""")
+	Page<TaskEntity> findDeletedListWithManager(@Param("userId")List<Long> userId, Pageable pageable);
+	
+	// manager 기준 deleted 탭 + status
+	@Query("""
+			select t
+			from TaskEntity t
+			where t.isDeleted = true
+			and t.status = :status
+			and exists (
+				select 1
+				from AuditLogEntity a
+				where a.task = t
+				and a.actor.id in :userId
+				and a.actionType = 'TASK_DELETED'
+			)
+			""")
+	Page<TaskEntity> findDeletedListWithManagerAndStatus(@Param("userId")List<Long> userId, @Param("status")TaskStatus status, Pageable pageable);
 
 	@EntityGraph(attributePaths = { "createdBy", "assignee" })
 	Page<TaskEntity> findByIsDeletedFalseAndAssignee_IdAndStatus(Long assigneeId, TaskStatus status, Pageable pageable);
-    // 특정 사용자가 담당인 Task 중 상태가 특정 값인 것만 조회
+	
 
 	// count 계열은 EntityGraph 붙이면 손해
 	long countByIsDeletedFalseAndAssignee_IdAndStatus(Long userId, TaskStatus status);
@@ -72,9 +170,16 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
 		select t from TaskEntity t
 		where t.isDeleted = false
 		  and t.visibility = 'PUBLIC'
-		  and t.status = :status
+		  and (
+			:status is null
+			or t.status = :status
+	    )
+		  and (:dept is null
+			    or t.ownerDepartment.name = :dept
+				or t.workDepartment.name = :dept
+			)
 	""")
-	Page<TaskEntity> findPublicOnlyByStatus(@Param("status") TaskStatus status, Pageable pageable);
+	Page<TaskEntity> findPublicOnlyByStatusAndDept(@Param("status") TaskStatus status, @Param("dept") String dept, Pageable pageable);
     // 공개 Task 중 특정 상태만 조회
 
 	// 전체 업무: 내가 볼 수 있는 모든 업무
@@ -84,14 +189,18 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
 	  select t from TaskEntity t
 	  where t.isDeleted = false
 	    and (
-	          t.createdBy.id = :userId
-	       or t.assignee.id = :userId
-	       or t.visibility = 'PUBLIC'
-	       or (t.visibility = 'DEPARTMENT' and t.workDepartment.id = :deptId)
+			  :isAdmin = true
+			  or(
+		          t.createdBy.id = :userId
+		       or t.assignee.id = :userId
+		       or t.visibility = 'PUBLIC'
+		       or (t.visibility = 'DEPARTMENT' and t.workDepartment.id = :deptId)
+		       )
 	    )
 	""")
 	Page<TaskEntity> findAllVisibleForUser(@Param("userId") Long userId,
 	                                      @Param("deptId") Long deptId,
+	                                      @Param("isAdmin") boolean isAdmin,
 	                                      Pageable pageable);
     // 로그인 사용자가 볼 수 있는 모든 Task 조회: 공개/내부부서/내가 작성하거나 담당
 
@@ -99,17 +208,24 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
 	@Query("""
 	  select t from TaskEntity t
 	  where t.isDeleted = false
-	    and t.status = :status
-	    and (
-	          t.createdBy.id = :userId
-	       or t.assignee.id = :userId
-	       or t.visibility = 'PUBLIC'
-	       or (t.visibility = 'DEPARTMENT' and t.workDepartment.id = :deptId)
+		    and (:status is null or t.status = :status)
+		    and (:dept is null
+			    or t.ownerDepartment.name = :dept
+				or t.workDepartment.name = :dept
+			)
+			and (
+			  :isAdmin = true
+		       or t.createdBy.id = :userId
+		       or t.assignee.id is not null and t.assignee.id = :userId
+		       or t.visibility = 'PUBLIC'
+		       or (t.visibility = 'DEPARTMENT' and t.workDepartment.id = :deptId)
 	    )
 	""")
 	Page<TaskEntity> findAllVisibleForUserByStatus(@Param("userId") Long userId,
 	                                              @Param("deptId") Long deptId,
 	                                              @Param("status") TaskStatus status,
+	                                              @Param("dept") String dept,
+	                                              @Param("isAdmin") boolean isAdmin,
 	                                              Pageable pageable);
     // 로그인 사용자가 볼 수 있는 Task 중 특정 상태인 것만 조회
 
@@ -169,6 +285,7 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
     // 특정 Task 상세 조회: 로그인 사용자가 접근 가능한 Task만, 작성자/담당자/공개/부서 포함
 	
 	Optional<TaskEntity> findByIdAndIsDeletedFalse(Long id);
+	Optional<TaskEntity> findByIdAndIsDeletedTrue(Long id);
 	
 	@Query("""
 	        select a

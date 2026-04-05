@@ -8,6 +8,8 @@ export const SCOPES = [
   "team",     // 팀/부서
   "created",  // 내가 생성한 업무
   "assigned", // 내가 담당인 업무
+  "like",     // 즐겨찾기
+  "deleted"   // 삭제된 업무
 ];
 
 // 상태 옵션
@@ -39,3 +41,9 @@ export const PRIORITIES = [
   "MEDIUM", // 보통
   "HIGH",   // 높음
 ];
+
+export const DEPARTMENT = [
+  "Operations",
+  "Development",
+  "Design"
+]

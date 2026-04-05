@@ -34,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AttachmentService {
 
     private final AttachmentRepository attachmentRepository;
@@ -58,7 +59,6 @@ public class AttachmentService {
     }
 
     // 첨부 업로드 (taskId에 귀속)
-    @Transactional
     public List<AttachmentResponse> uploadToTask(Long taskId, Long uploaderId, List<MultipartFile> files, String reason, String groupUuid, String isEdit) {
 
         TaskEntity task = taskRepository.findById(taskId)
@@ -120,7 +120,6 @@ public class AttachmentService {
     }
 
     // soft delete 처리
-    @Transactional
     public void softDelete(List<AttachmentResponse> attachment, Long requesterId, String uuid, String reason) {
     	
     	// 삭제할 것들 id
@@ -195,7 +194,6 @@ public class AttachmentService {
     }
 
     // Task별 남아있는 활성 첨부 파일 수 조회
-    @Transactional
     public long countActiveByTask(Long taskId) {
         return attachmentRepository.countActiveByTaskId(taskId);
     }
@@ -215,8 +213,11 @@ public class AttachmentService {
     	}
     	
     }
-
-    // === 기존 Service 내부 private 메서드 toResponse 삭제됨 ===
-    // Entity → DTO 변환은 AttachmentMapper로 통일됨
+    
+    // 논리삭제된 첨부파일 조회
+    @Transactional(readOnly = true)
+    public List<AttachmentEntity> deletedAttList(Long taskId) {
+    	return attachmentRepository.findByTaskIdAndIsDeletedTrue(taskId);
+    }
     
 }

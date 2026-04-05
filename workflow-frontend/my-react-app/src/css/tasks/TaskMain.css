@@ -365,7 +365,7 @@
   gap: 6px;
 
   flex: 0 0 auto;
-  min-width: 52px;   /* 폭 0 방지 */
+  /* min-width: 52px;   폭 0 방지 */
   z-index: 2;        /* 겹침 방지 */
 }
 
@@ -377,6 +377,43 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e6e8ef;
+  font-size: 14px;
+  line-height: 1;
+  color: #111827 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  white-space: nowrap;
+}
+
+.like__onBtn {
+  width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* gap: 4px; */
+  border-radius: 10px;
+  background: #f8f8f8;
+  border: 1px solid #e6e8ef;
+  font-size: 14px;
+  line-height: 1;
+  color: #111827 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  white-space: nowrap;
+}
+.like__offBtn {
+  width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* gap: 4px; */
   border-radius: 10px;
   background: #ffffff;
   border: 1px solid #e6e8ef;

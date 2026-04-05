@@ -5,9 +5,12 @@ import java.util.List;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.workflow.tasks.dto.TaskResponse;
 import com.workflow.user.dto.UserSimpleResponse;
 import com.workflow.user.service.UserService;
 
@@ -28,4 +31,12 @@ public class UserController {
 	    // DB에서 모든 사용자와 소속 부서 정보 조회
 	    return userService.list(userId);
 	}
+	
+	@PostMapping("/dept")
+	public Boolean dept(@AuthenticationPrincipal UserDetails principal,
+			@RequestBody TaskResponse req) {
+		Long userId = Long.parseLong(principal.getUsername());
+		return userService.dept(userId, req);
+	}
+	
 }

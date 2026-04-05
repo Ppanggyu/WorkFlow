@@ -9,14 +9,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.workflow.attachment.dto.AttachmentResponse;
+import com.workflow.attachment.entity.AttachmentEntity;
+import com.workflow.attachment.repository.AttachmentRepository;
 import com.workflow.attachment.service.AttachmentService;
 import com.workflow.audit.dto.AuditChanges;
 import com.workflow.audit.entity.AuditLogEntity;
 import com.workflow.audit.repository.AuditLogRepository;
+import com.workflow.audit.service.AuditLogService;
 import com.workflow.common.exception.ApiException;
 import com.workflow.common.exception.ErrorCode;
 import com.workflow.common.file.FileStorageService;
 import com.workflow.department.entity.DepartmentEntity;
+import com.workflow.likes.service.LikesService;
 import com.workflow.tasks.dto.TaskCreateRequest;
 import com.workflow.tasks.dto.TaskResponse;
 import com.workflow.tasks.entity.TaskEntity;
@@ -38,8 +42,11 @@ public class TaskCommandService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final AuditLogRepository auditLogRepository;
+    private final AttachmentRepository attachmentRepository;
     private final AttachmentService attachmentService;
     private final FileStorageService fileStorageService;
+    private final LikesService likesService;
+    private final AuditLogService auditLogService;
 
     // 업무 작성
     public TaskResponse create(TaskCreateRequest req, Long loginUserId) {
@@ -107,11 +114,12 @@ public class TaskCommandService {
         taskRepository.save(task);
         // 수정된 description 재저장
         
-        return TaskResponse.from(task, attachments);
+        return TaskResponse.from(task, attachments, false);
         // DTO로 변환 후 반환
     }
     
-//    @Tran
+    
+    // 업무수정
     public TaskResponse update(TaskCreateRequest req, Long loginUserId) {
     	List<AttachmentResponse> attachments = new ArrayList<>();
 
@@ -197,7 +205,80 @@ public class TaskCommandService {
         task.setDescription(descriptionFinal);
 
         
-        return TaskResponse.from(task, attachments);
+        return TaskResponse.from(task, attachments, false);
+    }
+    
+    // 업무 논리 삭제
+    public void delete(Long id, Long userId, String reason) {
+    	TaskEntity task = taskRepository.findByIdAndIsDeletedFalse(id)
+    			.orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "업무를 찾을 수 없습니다."));
+    	
+    	
+    	UserEntity user = userRepository.findById(userId)
+    			.orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+    	
+    	boolean isCreater = task.getCreatedBy().getId() == user.getId();
+    	boolean isAssignee = Objects.equals(
+    			task.getAssignee() != null ? task.getAssignee().getId() : null
+    			, user.getId());
+    	boolean isAdmin = Role.ADMIN == user.getRole();
+    	
+    	// 권한 확인
+    	if(!(isCreater || isAssignee || isAdmin)) {
+    		throw new ApiException(ErrorCode.FORBIDDEN);
+    	}
+    	
+    	likesService.delLike(id, userId);
+    	
+    	// 첨부파일 논리삭제
+    	attachmentService.taskDelete(task);
+    	// task 논리삭제
+    	task.setDeleted(true);
+    	task.setDeletedAt(LocalDateTime.now());
+    	// 로그
+    	auditLogService.taskDelete(task, user, reason);
+    	
+    }
+    
+    // 업무 복구
+    public void resotre(Long taskId, Long userId, String reason) {
+    	
+    	TaskEntity task = taskRepository.findByIdAndIsDeletedTrue(taskId)
+    			.orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "업무를 찾을 수 없습니다."));
+    	
+    	UserEntity user = userRepository.findById(userId)
+    			.orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+    	
+    	List<AttachmentEntity> list = attachmentService.deletedAttList(task.getId());
+    	
+    	boolean isAdmin = user.getRole() == Role.ADMIN;
+        boolean isManager = user.getRole() == Role.MANAGER;
+        boolean isCreator = task.getCreatedBy().getId() == user.getId();
+        boolean isAssignee = task.getAssignee() != null ? (task.getAssignee().getId() == user.getId()) : false;
+        boolean isDepartment = task.getWorkDepartment().getId() == user.getDepartment().getId();
+        boolean isPublic = task.getVisibility() == TaskVisibility.PUBLIC;
+        
+        if(!(isAdmin || (isManager && isDepartment) || isAssignee || isCreator || isPublic)) {
+        	throw new ApiException(ErrorCode.FORBIDDEN, "권한X");
+        }
+    	
+    	task.setDeleted(false);
+    	
+    	taskRepository.save(task);
+    	
+    	if(!list.isEmpty()) {
+    		list.forEach(a -> {
+    			if(a.isDeleted()) {
+    				a.setDeleted(false);
+    			}
+    		});
+    		attachmentRepository.saveAll(list);
+    	};
+    	
+    	auditLogService.taskResotre(task, user, list, reason);
+    	
+    	
+    	
     }
 
 }

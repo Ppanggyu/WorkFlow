@@ -23,4 +23,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 			  where u.id > 0
 			""")
 	List<UserEntity> findAllWithDepartment();
+	
+	List<UserEntity> findByDepartmentId(Long dept);
+	
 }
