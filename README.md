@@ -204,7 +204,7 @@
 <details>
 <summary><b>List</b></summary>
 
-<img width="871" height="452" alt="List" src="https://github.com/user-attachments/assets/5f35743f-79df-4f71-9d70-3fd421508bf3" />
+<img width="1539" height="840" alt="image" src="https://github.com/user-attachments/assets/2591042a-3e2b-4358-b91a-b329f39079ef" />
 
 </details>
 </li>
@@ -241,6 +241,28 @@
 <summary><b>Delete</b></summary>
   
 <img width="1916" height="605" alt="Delete" src="https://github.com/user-attachments/assets/ce968265-c5a5-4911-81ed-5199d7b86ac3" />
+
+</details>
+</li>
+
+<li>
+<Restore>
+<summary><b>Restore</b></summary>
+  
+<img width="1540" height="842" alt="image" src="https://github.com/user-attachments/assets/7cf29eda-5706-4e3b-9b29-d8e1f1010808" />
+<img width="1589" height="537" alt="image" src="https://github.com/user-attachments/assets/a715e917-fefa-401a-9aa0-80525ae6436e" />
+
+
+
+</details>
+</li>
+
+<li>
+<Like>
+<summary><b>Like</b></summary>
+
+<img width="1539" height="840" alt="image" src="https://github.com/user-attachments/assets/2591042a-3e2b-4358-b91a-b329f39079ef" />
+
 
 </details>
 </li>
