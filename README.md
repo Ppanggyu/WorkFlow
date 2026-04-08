@@ -265,23 +265,18 @@
 <img width="1540" height="842" alt="image" src="https://github.com/user-attachments/assets/7cf29eda-5706-4e3b-9b29-d8e1f1010808" />
 <img width="1589" height="537" alt="image" src="https://github.com/user-attachments/assets/a715e917-fefa-401a-9aa0-80525ae6436e" />
 
-
-
 </details>
 </li>
 
 <li>
 <Like>
 <summary><b>Like</b></summary>
-
+  
 <img width="1539" height="840" alt="image" src="https://github.com/user-attachments/assets/2591042a-3e2b-4358-b91a-b329f39079ef" />
-
 
 </details>
 </li>
 
-</ul>
-</details>
 
 ---
 
