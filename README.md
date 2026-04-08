@@ -259,7 +259,7 @@
 </li>
 
 <li>
-<Restore>
+<details>
 <summary><b>Restore</b></summary>
   
 <img width="1540" height="842" alt="image" src="https://github.com/user-attachments/assets/7cf29eda-5706-4e3b-9b29-d8e1f1010808" />
@@ -269,7 +269,7 @@
 </li>
 
 <li>
-<Like>
+<details>
 <summary><b>Like</b></summary>
   
 <img width="1539" height="840" alt="image" src="https://github.com/user-attachments/assets/2591042a-3e2b-4358-b91a-b329f39079ef" />
