@@ -2,10 +2,15 @@
 FROM gradle:8.2-jdk17 AS build
 WORKDIR /app
 
-# Gradle 캐시를 프로젝트 내부로 지정
-ENV GRADLE_USER_HOME=/app/.gradle
+# 비루트 사용자 생성
+USER root
+RUN useradd -ms /bin/bash gradleuser
+USER gradleuser
 
-# 의존성만 먼저 다운로드
+# Gradle 캐시를 홈 디렉토리로
+ENV GRADLE_USER_HOME=/home/gradleuser/.gradle
+
+# 의존성 다운로드
 COPY build.gradle settings.gradle ./
 RUN gradle dependencies --no-daemon
 
@@ -17,12 +22,7 @@ RUN gradle bootJar --no-daemon
 FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
-# 빌드된 jar 복사
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# React 정적 파일 빌드 후 /app/static에 복사 가능 (선택)
-# COPY --from=frontend-build /app/build ./static
-
 EXPOSE 8080
-
 ENTRYPOINT ["java", "-jar", "app.jar"]
