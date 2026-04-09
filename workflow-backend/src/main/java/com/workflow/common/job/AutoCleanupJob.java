@@ -41,6 +41,9 @@ public class AutoCleanupJob {
 //    @Value("${app.attachment-cleanup.retention-days:1}")
 	@Value("${app.attachment-cleanup.retention-minutes:10}")
 	private int retentionDays; // soft delete 후 보관 일수
+	
+	@Value("${app.upload-dir}")
+	String uploadDir;
 
 	// 매일 새벽 3시 실행(cron = "0 0 3 * * *")
 	// fixedRate: 이전 시작 시점 기준 10분마다 실행
@@ -145,7 +148,7 @@ public class AutoCleanupJob {
 
 		for (TaskEntity t : taskTargets) {
 			try {
-				Path taskDir = Paths.get("C:\\WorkFlow\\uploads\\tasks", String.valueOf(t.getId()));
+				Path taskDir = Paths.get(uploadDir, String.valueOf(t.getId()));
 				if(Files.exists(taskDir)) {
 					Files.walk(taskDir).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
 				}

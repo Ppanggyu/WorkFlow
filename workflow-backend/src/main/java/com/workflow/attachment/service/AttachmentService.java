@@ -39,7 +39,6 @@ public class AttachmentService {
 
     private final AttachmentRepository attachmentRepository;
     private final FileStorageService fileStorageService;
-    private final AuditLogRepository auditLogRepository;
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final AuditLogService auditLogService;
