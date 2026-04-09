@@ -425,6 +425,7 @@
   opacity: 1 !important;
   filter: none !important;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .like__onBtn:hover{background-color: #eeeeee}
