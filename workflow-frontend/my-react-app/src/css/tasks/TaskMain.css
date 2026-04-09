@@ -397,7 +397,7 @@
   justify-content: center;
   /* gap: 4px; */
   border-radius: 10px;
-  background: #f8f8f8;
+  background: #ffffff;
   border: 1px solid #e6e8ef;
   font-size: 14px;
   line-height: 1;
@@ -405,7 +405,9 @@
   opacity: 1 !important;
   filter: none !important;
   white-space: nowrap;
+  cursor: pointer;
 }
+
 .like__offBtn {
   width: 30px;
   height: 28px;
@@ -423,7 +425,11 @@
   opacity: 1 !important;
   filter: none !important;
   white-space: nowrap;
+  cursor: pointer;
 }
+
+.like__onBtn:hover{background-color: #eeeeee}
+.like__offBtn:hover{background-color: #eeeeee}
 
 .tasks__card--done .tasks__att,
 .tasks__card--canceled .tasks__att { opacity: 0.95 !important; }
