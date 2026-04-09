@@ -42,7 +42,6 @@ public class DashboardController {
     public Page<TaskResponse> dashBoardTask(@AuthenticationPrincipal UserDetails principal,
     		@RequestParam("scope") String scope,
     		@RequestParam("page") int page, @RequestParam("size") int size){
-    	System.out.println("scope@@@@@@@@@@@@" + scope);
     	Long userId = Long.parseLong(principal.getUsername());
     	
     	return taskQueryService.dashBoardTask(userId, page, size, scope);

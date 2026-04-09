@@ -55,7 +55,6 @@ public class AttachmentController {
 	@DeleteMapping("/attachments/delete")
 	public ResponseEntity<?> delete(@RequestBody AttachmentDeleteRequest att, Authentication auth) {
 		
-		System.out.println("/attachments/delete@@@@");
 
 		List<AttachmentResponse> attachment = att.attachment();
 		
