@@ -33,13 +33,17 @@ public class UploadController {
         // tmp 폴더에 파일 저장 후 상대 경로 반환
         String path = fileStorageService.storeEditorImageToTmp(file, "tasks");
 
-        // 클라이언트에서 접근 가능한 전체 URL 생성
-        String base = req.getScheme() + "://" + req.getServerName() +
-                ((req.getServerPort() == 80 || req.getServerPort() == 443)
-                        ? "" // 기본 HTTP/HTTPS 포트면 생략
-                        : ":" + req.getServerPort());
-
-        // {"url": "http://host:port/uploads/tasks/tmp/파일명"} 형식으로 반환
-        return ResponseEntity.ok(Map.of("url", base + path));
+        if(System.getProperty("os.name").toLowerCase().contains("win")) {
+        	// 클라이언트에서 접근 가능한 전체 URL 생성
+        	String base = req.getScheme() + "://" + req.getServerName() +
+        			((req.getServerPort() == 80 || req.getServerPort() == 443)
+        					? "" // 기본 HTTP/HTTPS 포트면 생략
+        							: ":" + req.getServerPort());
+        	
+        	// {"url": "http://host:port/uploads/tasks/tmp/파일명"} 형식으로 반환
+        	return ResponseEntity.ok(Map.of("url", base + path));
+        	
+        }
+        return ResponseEntity.ok(Map.of("url", path));
     }
 }
