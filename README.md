@@ -12,7 +12,7 @@
 | **개발 인원** | 2명 |
 | **주요 기술** | **Java, Spring Security, JWT, JPA, React, PostgreSQL, GitHub Actions CI, Spring Boot, Gradle** |
 | **주소** | https://www.workflow.o-r.kr/ |
-|**테스트계정** | 관리자 : admin@workflw.com / 1234 <br> 팀장 : song@workflow.com / 1234 <br> 팀원 : lim@workflow.com / 1234 |
+|**테스트계정** | admin@workflw.com / 1234 |
 
 📌 처음 사용하는 기술 스택을 학습하기 위해 시작한 프로젝트로, 기능을 확장하며 지속적으로 개발을 진행하고 있으며, 업무 흐름과 권한, 이력 추적을 고려한 시스템 설계를 목표로 했습니다.
 
