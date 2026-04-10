@@ -14,14 +14,14 @@ SELECT * FROM refresh_tokens;
 
 
 
--- DROP TABLE refresh_tokens;
--- DROP TABLE audit_logs;
--- DROP TABLE attachments;
--- DROP TABLE comments;
--- DROP TABLE task_likes;
--- DROP TABLE tasks;
--- DROP TABLE users;
--- DROP TABLE department;
+DROP TABLE refresh_tokens;
+DROP TABLE audit_logs;
+DROP TABLE attachments;
+DROP TABLE comments;
+DROP TABLE task_likes;
+DROP TABLE tasks;
+DROP TABLE users;
+DROP TABLE department;
 
 CREATE TABLE department (
 	id BIGSERIAL PRIMARY KEY,
